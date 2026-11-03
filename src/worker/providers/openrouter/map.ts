@@ -14,6 +14,13 @@ export function mapEntities(page: z.infer<typeof keysPage>): EntityRow[] {
     lastUsedAt: k.last_used_at,
     meta: {
       label: k.label ?? "",
+      original_name: k.name ?? "",
+      expires_at: k.expires_at ?? null,
+      updated_at: k.updated_at ?? null,
+      byok_usage: k.byok_usage ?? 0,
+      byok_usage_daily: k.byok_usage_daily ?? 0,
+      byok_usage_weekly: k.byok_usage_weekly ?? 0,
+      byok_usage_monthly: k.byok_usage_monthly ?? 0,
       limit: k.limit ?? null,
       limit_remaining: k.limit_remaining ?? null,
       limit_reset: k.limit_reset ?? null,
@@ -26,7 +33,7 @@ export function mapEntities(page: z.infer<typeof keysPage>): EntityRow[] {
   }));
 }
 export function resolveName(value: string, keys: EntityRow[]) {
-  const byName = keys.filter((k) => k.name === value);
+  const byName = keys.filter((k) => (k.meta?.original_name ?? k.name) === value);
   const matches = byName.length ? byName : keys.filter((k) => k.meta?.label === value);
   return matches.length === 1 ? matches[0] : undefined;
 }

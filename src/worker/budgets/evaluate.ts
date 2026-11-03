@@ -99,8 +99,8 @@ export async function evaluateBudgets(deps: Deps) {
       const closed = p.start === previous.start;
       const existing = closed
         ? await db
-            .prepare("SELECT period_start FROM budget_periods WHERE budget_id=? AND period_start=?")
-            .bind(budget.id, p.start)
+            .prepare("SELECT id FROM events WHERE dedupe_key=?")
+            .bind(`budget:${budget.id}:${p.start}:closed`)
             .first()
         : null;
       // Evaluate just-ended once after rollover; late data can still update current periods.

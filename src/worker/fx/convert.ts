@@ -1,3 +1,4 @@
+// UNVERIFIED: provider totals being pre-tax; this configurable percentage is a budgeting view only. https://platform.claude.com/docs/en/manage-claude/usage-cost-api
 export interface FxRate {
   day: string;
   quote: string;

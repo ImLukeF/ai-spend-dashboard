@@ -65,7 +65,10 @@ export async function providerFetch<T>(
   for (let attempt = 0; attempt < 3; attempt++) {
     ctx.budget.request();
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 25000);
+    const timer = setTimeout(
+      () => controller.abort(),
+      Math.min(25000, Math.max(1, ctx.budget.deadline + 15000 - Date.now())),
+    );
     try {
       const headers = new Headers(init.headers);
       headers.set(
@@ -98,7 +101,16 @@ export async function providerFetch<T>(
               ? seconds * 1000
               : Date.parse(retry) - ctx.deps.now().getTime()
             : 2000 * 2 ** attempt + Math.random() * 200;
-          await ctx.deps.sleep(Math.max(0, Math.min(30000, Number.isFinite(delay) ? delay : 2000)));
+          await ctx.deps.sleep(
+            Math.max(
+              0,
+              Math.min(
+                30000,
+                Math.max(0, ctx.budget.deadline - Date.now()),
+                Number.isFinite(delay) ? delay : 2000,
+              ),
+            ),
+          );
           continue;
         }
         throw new ProviderError(response.status, url.pathname);

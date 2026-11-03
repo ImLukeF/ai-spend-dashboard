@@ -1,3 +1,4 @@
+// UNVERIFIED: numeric legacy endpoint limits and Console-billed coding-tool coverage; poll at most every 15 minutes. https://platform.claude.com/docs/en/manage-claude/usage-cost-api
 import { SchemaDriftError } from "../../../shared/money";
 import { providerFetch } from "../http";
 import type { JobCtx, ProviderAdapter, PullWindow } from "../types";

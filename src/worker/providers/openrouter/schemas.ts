@@ -19,6 +19,12 @@ export const keySchema = z.looseObject({
   usage_daily: numeric.optional(),
   usage_weekly: numeric.optional(),
   usage_monthly: numeric.optional(),
+  byok_usage: numeric.optional(),
+  byok_usage_daily: numeric.optional(),
+  byok_usage_weekly: numeric.optional(),
+  byok_usage_monthly: numeric.optional(),
+  expires_at: z.string().nullish(),
+  updated_at: z.string().nullish(),
 });
 export const keysPage = z.looseObject({ data: z.array(keySchema) });
 export const analytics = z.looseObject({

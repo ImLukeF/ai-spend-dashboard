@@ -1,3 +1,4 @@
+// UNVERIFIED: numeric admin rate limits and reporting lag; bounded polling honors Retry-After. https://developers.openai.com/api/docs/guides/admin-apis
 import { SchemaDriftError } from "../../../shared/money";
 import { providerFetch } from "../http";
 import type { JobCtx, ProviderAdapter, PullWindow } from "../types";
