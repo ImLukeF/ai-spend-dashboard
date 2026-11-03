@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const files = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
   .split("\0")
@@ -16,7 +16,7 @@ const patterns = [
 ];
 let failed = false;
 for (const file of files) {
-  if (allow.includes(file)) continue;
+  if (allow.includes(file) || !existsSync(file)) continue;
   const text = readFileSync(file, "utf8");
   text.split("\n").forEach((line, i) => {
     const matches = patterns.flatMap((p) => [...line.matchAll(p)].map((m) => m[0]));

@@ -14,23 +14,24 @@
     "deploy": "npm run build && wrangler deploy",
     "lint": "biome ci .",
     "format": "biome check --write .",
-    "typecheck": "wrangler types --check && tsc -p tsconfig.json --noEmit",
+    "typecheck": "wrangler types --include-runtime=false --check && tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "check:secrets": "node scripts/check-secrets.mjs",
-    "cf-typegen": "wrangler types",
+    "cf-typegen": "wrangler types --include-runtime=false",
     "seed:local": "node scripts/seed-local.mjs",
     "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run check:secrets"
   },
   "dependencies": {
+    "chart.js": "^4.6.0",
     "hono": "^4.13.0",
-    "zod": "^4.6.0",
     "jose": "^6.2.0",
     "preact": "^11.1.0",
-    "chart.js": "^4.6.0"
+    "zod": "^4.6.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.0",
     "@cloudflare/vitest-plugin": "^1.5.1",
+    "@cloudflare/workers-types": "^5.20261103.1",
     "@preact/preset-vite": "^2.10.0",
     "@types/node": "^24.0.0",
     "typescript": "^7.0.2",

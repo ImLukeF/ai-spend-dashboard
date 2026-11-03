@@ -12,3 +12,4 @@ coverage/
 *.sqlite*
 backup/
 raw/
+.playwright-cli/
