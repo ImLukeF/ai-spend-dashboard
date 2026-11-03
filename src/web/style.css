@@ -657,3 +657,9 @@ progress.progress::-moz-progress-bar {
 .fresh.old i {
   background: #c55343;
 }
+.budget-warning {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 8px;
+}
