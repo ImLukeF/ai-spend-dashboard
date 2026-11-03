@@ -1,0 +1,60 @@
+{
+  "name": "ai-spend-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run build && wrangler dev --test-scheduled --ip 127.0.0.1",
+    "dev:web": "vite --host 127.0.0.1 --port 5173",
+    "build": "vite build",
+    "deploy": "npm run build && wrangler deploy",
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "typecheck": "wrangler types --check && tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "cf-typegen": "wrangler types",
+    "seed:local": "node scripts/seed-local.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run check:secrets"
+  },
+  "dependencies": {
+    "hono": "^4.13.0",
+    "zod": "^4.6.0",
+    "jose": "^6.2.0",
+    "preact": "^11.1.0",
+    "chart.js": "^4.6.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.0",
+    "@cloudflare/vitest-plugin": "^1.5.1",
+    "@preact/preset-vite": "^2.10.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^4.1.12",
+    "wrangler": "^4.157.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "DASHBOARD_TOKEN": {
+        "description": "Token login: generate at least 32 random characters. [Authentication](https://github.com/ImLukeF/ai-spend-dashboard/blob/main/docs/auth.md). Enter `-` if using Access."
+      },
+      "ANTHROPIC_ADMIN_KEY": {
+        "description": "[Create an Anthropic admin key](https://platform.claude.com/docs/en/manage-claude/admin-api). Enter `-` if unused."
+      },
+      "OPENAI_ADMIN_KEY": {
+        "description": "[Create an OpenAI admin key](https://developers.openai.com/api/docs/guides/admin-apis). Enter `-` if unused."
+      },
+      "OPENROUTER_MANAGEMENT_KEY": {
+        "description": "[Create an OpenRouter management key](https://openrouter.ai/docs/guides/overview/auth/management-api-keys). Enter `-` if unused."
+      },
+      "ENFORCEMENT_MODE": {
+        "description": "Use dry_run initially. off disables actions; live requires explicit config targets. Enter `-` for dry_run."
+      }
+    }
+  }
+}

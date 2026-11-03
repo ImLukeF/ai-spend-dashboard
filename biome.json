@@ -1,0 +1,15 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.0/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!!worker-configuration.d.ts",
+      "!!PLAN.md",
+      "!!.cache",
+      "!!package-lock.json"
+    ]
+  },
+  "formatter": { "indentStyle": "space", "lineWidth": 100 },
+  "linter": { "enabled": true, "rules": { "recommended": true } },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } }
+}
