@@ -1,0 +1,19 @@
+{
+  "data": {
+    "data": [
+      {
+        "api_key_id": "Example bot",
+        "model": "model-example-1",
+        "total_usage": "1.234567",
+        "request_count": "5",
+        "tokens_prompt": "1000",
+        "tokens_completion": "500",
+        "created_at__day": "2026-11-03"
+      }
+    ],
+    "metadata": {
+      "row_count": 1,
+      "truncated": true
+    }
+  }
+}

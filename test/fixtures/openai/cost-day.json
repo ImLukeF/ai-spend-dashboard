@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "start_time": 1793664000,
+      "end_time": 1793750400,
+      "results": [
+        {
+          "amount": {
+            "value": 0.06,
+            "currency": "usd"
+          },
+          "line_item": "gpt-example-1, input_tokens",
+          "project_id": "proj_example01",
+          "api_key_id": "key_example01",
+          "quantity": 10,
+          "quantity_unit": "1000_tokens"
+        },
+        {
+          "amount": {
+            "value": "0.000001",
+            "currency": "usd"
+          },
+          "line_item": "storage unparsed",
+          "project_id": "proj_example01",
+          "api_key_id": null,
+          "quantity": 3,
+          "quantity_unit": "gibibyte_hours"
+        }
+      ]
+    }
+  ],
+  "has_more": false,
+  "next_page": null
+}

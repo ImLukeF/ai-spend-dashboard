@@ -1,0 +1,6 @@
+{
+  "error": {
+    "message": "Rate limited"
+  },
+  "retry_after": 2
+}
