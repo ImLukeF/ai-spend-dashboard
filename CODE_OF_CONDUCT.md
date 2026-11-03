@@ -1,9 +1,3 @@
-+++
-version = "2.1"
-aliases = ["/version/2/1"]
-reportingPlaceholder = "[GitHub private report to the maintainer](https://github.com/ImLukeF/ai-spend-dashboard/security/advisories/new)"
-+++
-
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge
