@@ -28,7 +28,7 @@ export const BudgetViewSchema = z.looseObject({
   spent: z.number(),
   limit: z.number(),
   currency: z.string(),
-  percent: z.number(),
+  percent: z.number().nullable(),
   status: z.string(),
   forecast: z.number().nullable(),
 });

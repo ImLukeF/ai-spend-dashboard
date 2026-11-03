@@ -46,16 +46,23 @@ export function evaluate(
     limit: budget.amount,
     currency: missing ? "USD" : budget.currency,
     taxIncluded: budget.includeTax,
-    percent,
-    forecast: projected,
-    status:
-      percent >= 100 ? "exceeded" : percent >= (budget.thresholds[0] ?? 100) ? "warning" : "ok",
+    percent: missing ? 0 : percent,
+    forecast: missing ? null : projected,
+    status: missing
+      ? "warning"
+      : percent >= 100
+        ? "exceeded"
+        : percent >= (budget.thresholds[0] ?? 100)
+          ? "warning"
+          : "ok",
     basisMix: basis,
     warnings: missing ? ["Missing FX; enforcement blocked"] : [],
     canEnforce: !missing,
-    thresholdsHit: budget.thresholds.filter((t) => t <= percent),
+    thresholdsHit: missing ? [] : budget.thresholds.filter((t) => t <= percent),
     forecastTriggered:
-      budget.forecast && forecastTriggered(projected, budget.amount, p.elapsedHours, p.hours),
+      !missing &&
+      budget.forecast &&
+      forecastTriggered(projected, budget.amount, p.elapsedHours, p.hours),
   };
 }
 export function scopeSql(budget: Budget, alias = "s") {

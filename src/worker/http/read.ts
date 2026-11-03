@@ -235,8 +235,13 @@ export async function budgets(deps: Deps) {
         period: b.period,
         spent: Number(current?.spent ?? 0),
         limit: b.amount,
+        limitCurrency: b.currency,
+        warnings:
+          current && current.currency !== b.currency
+            ? ["FX unavailable; showing spend in USD. Threshold alerts and enforcement are held."]
+            : [],
         currency: current?.currency ?? b.currency,
-        percent: Number(current?.percent ?? 0),
+        percent: current && current.currency !== b.currency ? null : Number(current?.percent ?? 0),
         status: current?.status ?? "ok",
         forecast: current?.forecast ?? null,
         thresholds: b.thresholds,

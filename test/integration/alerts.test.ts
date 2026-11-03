@@ -191,3 +191,17 @@ it("evaluates an existing just-ended period one last time and closes it once", a
     ).first("n"),
   ).toBe(1);
 });
+
+it("holds threshold alerts when a non-USD budget cannot be converted", async () => {
+  const c = deps({
+    budgets: [{ id: "aud-daily", name: "AUD daily", period: "day", amount: 10, currency: "AUD" }],
+  });
+  await env.DB.prepare(
+    "INSERT INTO spend_daily VALUES('openai','2026-11-04','','','','billed',20000000,0,'2026-11-04T03:15:00Z')",
+  ).run();
+  const results = await evaluateBudgets(c);
+  expect(results[0]?.result.canEnforce).toBe(false);
+  expect(
+    await env.DB.prepare("SELECT count(*) n FROM events WHERE type='budget.threshold'").first("n"),
+  ).toBe(0);
+});

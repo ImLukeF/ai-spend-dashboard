@@ -29,7 +29,8 @@ type Row = Partial<SpendRow> & {
   basis?: string;
   basisMix?: Record<string, number>;
   currency?: string;
-  percent?: number;
+  limitCurrency?: string;
+  percent?: number | null;
   limit?: number;
   forecast?: number;
   status?: string;
@@ -921,10 +922,16 @@ function BudgetList({
           </div>
           <div class="budget-line muted">
             <span>
-              {money(b.spent, b.currency || "USD")} of {money(b.limit, b.currency || "USD")}
+              {money(b.spent, b.currency || "USD")} of{" "}
+              {money(b.limit, b.limitCurrency || b.currency || "USD")}
             </span>
             <span>{numberPercent(b.percent)}</span>
           </div>
+          {b.warnings?.map((warning, index) => (
+            <span class="budget-warning" key={index}>
+              {text(typeof warning === "string" ? warning : (warning.message ?? warning))}
+            </span>
+          ))}
           <progress
             class="progress"
             aria-label={`${text(b.name)} budget`}

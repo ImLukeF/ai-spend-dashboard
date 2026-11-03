@@ -4,7 +4,7 @@ Budgets use UTC day, ISO week (Monday) or calendar month periods. `scope:{}` mat
 
 A definition has `id`, `name`, `period`, positive `amount`, `currency`, `includeTax`, `scope`, sorted unique `thresholds`, `forecast`, `notifyOnClose`, `channels`, and optional `enforce`. Defaults: USD, no tax, 50/80/100%, forecast enabled, no close notification, no enforcement.
 
-Thresholds fire once per budget/period/threshold/definition hash. Changing a definition deliberately resets its dedupe identity. Forecast is linear (`spent / elapsed hours × period hours`), week/month only, and can alert after 25% of the period. A just-ended period is evaluated once more, recorded and optionally notified. Missing usable FX blocks live enforcement; USD fallback amounts are indicative until rates arrive.
+Thresholds fire once per budget/period/threshold/definition hash. Changing a definition deliberately resets its dedupe identity. Forecast is linear (`spent / elapsed hours × period hours`), week/month only, and can alert after 25% of the period. A just-ended period is evaluated once more, recorded and optionally notified. Missing usable FX blocks threshold/forecast alerts and live enforcement; spent is shown in USD, the limit retains its configured currency, and percent is unknown until rates arrive.
 
 ```ts
 {
