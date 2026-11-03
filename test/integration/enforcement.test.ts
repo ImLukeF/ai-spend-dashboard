@@ -97,13 +97,19 @@ async function setup(master: string, extra: Record<string, unknown> = {}) {
 beforeEach(resetDb);
 it.each(["", "dry_run", "off"])("%s never performs provider writes", async (master) => {
   const { c, evaluated } = await setup(master);
-  let calls = 0;
-  c.fetch = async () => {
-    calls++;
-    throw new Error("Dry run must not fetch provider");
+  let writes = 0;
+  c.fetch = async (_url, init) => {
+    if (init?.method && init.method !== "GET") writes++;
+    return json({
+      data: entities
+        .filter((e) => e.provider === "anthropic" && e.kind === "api_key")
+        .map((e) => ({ id: e.id, name: e.name, status: "active", workspace_id: e.workspaceId })),
+      has_more: false,
+      last_id: null,
+    });
   };
   await executeEnforcement(c, new BudgetCounter("paid"), evaluated);
-  expect(calls).toBe(0);
+  expect(writes).toBe(0);
   expect(await env.DB.prepare("SELECT COUNT(*) n FROM enforcement_actions").first("n")).toBe(
     master === "off" ? 0 : 4,
   );
@@ -255,4 +261,26 @@ it("recovers interrupted provider mutations from the durable snapshot without ap
       "status",
     ),
   ).toBe("applied");
+});
+
+it("records a skipped workspace action if its fresh key list exceeds maxKeys", async () => {
+  const { c, evaluated } = await setup("dry_run");
+  const budget = evaluated[0]?.budget;
+  if (!budget?.enforce) throw new Error("Missing budget");
+  budget.enforce.actions = [
+    { type: "anthropic.deactivate_workspace_keys", workspaceId: "wrkspc_EXAMPLE01", maxKeys: 1 },
+  ];
+  c.fetch = async () =>
+    json({
+      data: entities
+        .filter((e) => e.provider === "anthropic" && e.kind === "api_key")
+        .map((e) => ({ id: e.id, name: e.name, status: "active", workspace_id: e.workspaceId })),
+      has_more: false,
+      last_id: null,
+    });
+  await executeEnforcement(c, new BudgetCounter("paid"), evaluated);
+  expect(await env.DB.prepare("SELECT status,reason FROM enforcement_actions").first()).toEqual({
+    status: "skipped",
+    reason: "workspace_max_keys",
+  });
 });

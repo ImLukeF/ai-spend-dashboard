@@ -165,34 +165,33 @@ export async function executeEnforcement(
       const p = provider(action);
       const ctx: JobCtx = { deps, budget: counter, secret: secret(deps.env, providerSecrets[p]) };
       let targets = [{ id: target(action), type: action.type }];
+      let expansionReason: string | null = null;
       if (action.type === "anthropic.deactivate_workspace_keys") {
-        if (master === "live" && counter.fits(2, 8)) {
+        if (ctx.secret) {
+          if (!counter.fits(2, 8)) return;
           const keys = await listEntities(
             ctx,
             "api_key",
             `&workspace_id=${encodeURIComponent(action.workspaceId)}&status=active`,
           );
-          if (keys.length > action.maxKeys) {
-            await emit(deps, {
-              type: "enforcement.skipped",
-              severity: "critical",
-              dedupeKey: `workspace-cap:${budget.id}:${result.start}:${action.workspaceId}`,
-              budgetId: budget.id,
-              data: { reason: "workspace_max_keys" },
-              channels: budget.channels,
-            });
-            continue;
-          }
-          targets = keys.map((k) => ({ id: k.id, type: "anthropic.deactivate_api_key" }));
+          if (keys.length > action.maxKeys) expansionReason = "workspace_max_keys";
+          else targets = keys.map((k) => ({ id: k.id, type: "anthropic.deactivate_api_key" }));
         }
       }
       for (const t of targets) {
         if (!counter.fits(master === "live" ? 2 : 0, 8)) return;
         const id = deps.randomId();
         const entity = await deps.env.DB.prepare(
-          "SELECT last_seen_at,status FROM entities WHERE provider=? AND id=?",
+          "SELECT last_seen_at,status FROM entities WHERE provider=? AND id=? AND kind=?",
         )
-          .bind(p, t.id)
+          .bind(
+            p,
+            t.id,
+            t.type === "openai.set_project_spend_limit" ||
+              t.type === "anthropic.deactivate_workspace_keys"
+              ? "workspace"
+              : "api_key",
+          )
           .first<{ last_seen_at: string; status: string }>();
         const sync = await deps.env.DB.prepare(
           "SELECT max(last_success_at) success FROM sync_state WHERE provider=? AND (job LIKE '%.cost_daily' OR job LIKE '%.usage_daily' OR job LIKE '%.usage_hourly')",
@@ -207,6 +206,7 @@ export async function executeEnforcement(
           deps.now(),
           result.canEnforce,
         );
+        if (expansionReason) reason = expansionReason;
         if (
           count >= deps.config.enforcement.maxActionsPerTick ||
           daily >= deps.config.enforcement.maxActionsPerDay
