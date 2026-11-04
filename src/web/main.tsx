@@ -972,7 +972,7 @@ function Ranked({ data, money }: { data: unknown; money: (n: unknown) => string 
         .slice(0, 5)
         .map(([name, amount]) => (
           <li>
-            <span>{name}</span>
+            <span title={name}>{name}</span>
             <strong>{money(amount)}</strong>
           </li>
         ))}

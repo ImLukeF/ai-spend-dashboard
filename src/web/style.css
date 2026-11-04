@@ -269,7 +269,7 @@ details .table-wrap {
 }
 .columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 60px;
 }
 .subsection {
@@ -347,9 +347,17 @@ details .table-wrap {
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
   font-size: 13px;
+  gap: 12px;
+}
+.ranked li > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ranked strong {
   font-weight: 650;
+  flex-shrink: 0;
 }
 .empty {
   color: var(--muted);
@@ -577,7 +585,7 @@ footer {
     font-size: 22px;
   }
   .columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
   .page-heading {
