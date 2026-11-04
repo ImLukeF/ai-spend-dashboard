@@ -503,6 +503,11 @@ function App() {
         <nav aria-label="Main navigation">
           {nav.map(([href, label]) => (
             <a
+              aria-current={
+                path === href || (href === "/budgets" && path.startsWith("/budgets/"))
+                  ? "page"
+                  : undefined
+              }
               class={
                 path === href || (href === "/budgets" && path.startsWith("/budgets/"))
                   ? "active"
