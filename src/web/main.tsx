@@ -2,6 +2,8 @@ import { Chart, registerables } from "chart.js";
 import { type ComponentChildren, render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { SpendRow } from "../shared/api-types";
+import { valueAxis } from "./chart";
+import { tagLabels } from "./format";
 import "./style.css";
 
 Chart.register(...registerables);
@@ -73,6 +75,8 @@ type Row = Partial<SpendRow> & {
   protected?: boolean;
   enabled?: boolean;
   configured?: boolean;
+  hasData?: boolean;
+  syntheticDemo?: boolean;
   job?: string;
   thresholdsHit?: unknown;
   thresholds_hit?: unknown;
@@ -191,6 +195,20 @@ function BasisMix({ row }: { row: Row }) {
 function Empty({ children = "No data for this period." }: { children?: ComponentChildren }) {
   return <p class="empty">{children}</p>;
 }
+function Tags({ value }: { value: unknown }) {
+  const labels = tagLabels(value);
+  return labels.length ? (
+    <span class="tags">
+      {labels.map((label) => (
+        <span class="tag" key={label}>
+          {label}
+        </span>
+      ))}
+    </span>
+  ) : (
+    <>—</>
+  );
+}
 function Table({ headings, children }: { headings: string[]; children: ComponentChildren }) {
   return (
     <div class="table-wrap">
@@ -211,10 +229,12 @@ function ChartView({
   data,
   label,
   money,
+  currency,
 }: {
   data: unknown;
   label: string;
   money: (n: unknown) => string;
+  currency?: string;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const series = rows(data, "series", "data", "rows");
@@ -257,13 +277,20 @@ function ChartView({
           : { duration: 350 },
         scales: {
           x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, beginAtZero: true },
+          y: valueAxis(currency),
         },
-        plugins: { legend: { position: "bottom", labels: { boxWidth: 10, usePointStyle: true } } },
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 10, usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.dataset.label}: ${money(context.parsed.y)}`,
+            },
+          },
+        },
       },
     });
     return () => chart.destroy();
-  }, [data]);
+  }, [data, currency]);
   if (!series.length) return <Empty />;
   return (
     <>
@@ -272,7 +299,7 @@ function ChartView({
       </div>
       <details>
         <summary>View chart data</summary>
-        <Table headings={["Date", "Group", "Amount", "Basis"]}>
+        <Table headings={["Date", "Group", currency ? `Spend (${currency})` : "Tokens", "Basis"]}>
           {series.map((r, i) => (
             <tr key={i}>
               <td>{text(r.day ?? r.date ?? r.bucket ?? r.period_start ?? r.time)}</td>
@@ -503,6 +530,11 @@ function App() {
         <nav aria-label="Main navigation">
           {nav.map(([href, label]) => (
             <a
+              aria-current={
+                path === href || (href === "/budgets" && path.startsWith("/budgets/"))
+                  ? "page"
+                  : undefined
+              }
               class={
                 path === href || (href === "/budgets" && path.startsWith("/budgets/"))
                   ? "active"
@@ -633,10 +665,18 @@ function App() {
                 ["Yesterday", "yesterday"],
                 ["Week to date", "weekToDate"],
                 ["Month to date", "monthToDate"],
-                ["Month forecast", "monthForecast"],
+                ["Month-end run rate (UTC)", "monthForecast"],
               ].map(([label, key]) => (
                 <div>
-                  <span>{label}</span>
+                  <span
+                    title={
+                      key === "monthForecast"
+                        ? "Month-to-date spend ÷ elapsed UTC hours × hours in this month. Includes today's partial UTC day; this is a projection, not a bill."
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </span>
                   <strong>{summaryMoney(summary.totals?.[key || ""])}</strong>
                 </div>
               ))}
@@ -649,7 +689,12 @@ function App() {
                 </div>
                 <a href="#/explore">Explore spend →</a>
               </div>
-              <ChartView data={result[0]} label="Daily spend by provider" money={spendMoney(0)} />
+              <ChartView
+                data={result[0]}
+                label="Daily spend by provider"
+                money={spendMoney(0)}
+                currency={result[0]?.currency || "USD"}
+              />
             </section>
             <div class="columns">
               <section class="section">
@@ -785,8 +830,9 @@ function App() {
               </div>
               <ChartView
                 data={range === "24h" ? result[1] : result[0]}
-                label="Spend over time"
+                label={range === "24h" ? "Hourly token usage" : "Spend over time"}
                 money={range === "24h" ? number : spendMoney(0)}
+                currency={range === "24h" ? undefined : result[0]?.currency || "USD"}
               />
             </section>
             <section class="section">
@@ -967,7 +1013,7 @@ function Ranked({ data, money }: { data: unknown; money: (n: unknown) => string 
         .slice(0, 5)
         .map(([name, amount]) => (
           <li>
-            <span>{name}</span>
+            <span title={name}>{name}</span>
             <strong>{money(amount)}</strong>
           </li>
         ))}
@@ -1128,7 +1174,9 @@ function EntityTable({ data, money }: { data: unknown; money: (n: unknown) => st
               <td>
                 <span class="status">{text(r.status)}</span>
               </td>
-              <td>{text(r.tags)}</td>
+              <td>
+                <Tags value={r.tags} />
+              </td>
               <td>{money(r.monthToDate ?? r.mtdSpend ?? r.spend)}</td>
               <td>{date(r.lastUsedAt ?? r.last_used_at ?? r.lastUsed)}</td>
             </tr>
@@ -1243,13 +1291,29 @@ function Settings({
       </section>
       <section class="section">
         <h2>Providers</h2>
+        {status.syntheticDemo && (
+          <p class="banner">
+            Synthetic demo data is loaded. Stored spend does not mean a provider is configured or
+            has been synced.
+          </p>
+        )}
         {rows(status, "providers").length ? (
-          <Table headings={["Provider", "Enabled", "Secret"]}>
+          <Table
+            headings={["Provider", "Configuration", "Credential", "Stored spend", "Last data sync"]}
+          >
             {rows(status, "providers").map((p, i) => (
               <tr key={i}>
                 <td>{text(p.provider)}</td>
-                <td>{p.enabled ? "Yes" : "No"}</td>
+                <td>
+                  {p.status === "configured"
+                    ? "Configured"
+                    : p.status === "disabled"
+                      ? "Disabled"
+                      : "Not configured"}
+                </td>
                 <td>{p.configured ? "Set" : "Not set"}</td>
+                <td>{p.hasData ? "Available" : "None"}</td>
+                <td>{p.lastSuccessAt ? date(p.lastSuccessAt) : "Never"}</td>
               </tr>
             ))}
           </Table>

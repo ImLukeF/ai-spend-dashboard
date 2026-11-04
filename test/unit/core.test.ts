@@ -6,7 +6,7 @@ import { ConfigSchema } from "../../src/shared/config-schema";
 import { centsDecimalStringToMicros, usdToMicros } from "../../src/shared/money";
 import { period } from "../../src/shared/periods";
 import { evaluate } from "../../src/worker/budgets/evaluate";
-import { forecastTriggered } from "../../src/worker/budgets/forecast";
+import { forecast, forecastTriggered } from "../../src/worker/budgets/forecast";
 import { loadConfig } from "../../src/worker/config";
 import { canRestore, guard, mode } from "../../src/worker/enforcement/plan";
 import { convert, rateFor } from "../../src/worker/fx/convert";
@@ -41,6 +41,31 @@ it.each([
 ] as const)("UTC periods %s", (date, kind, start, end) =>
   expect(period(new Date(date), kind)).toMatchObject({ start, end }),
 );
+it.each([
+  [42, 72, 720, "month", 420],
+  [56, 96, 720, "month", 420],
+  [28, 48, 168, "week", 98],
+  [0, 24, 720, "month", 0],
+  [10, 0, 720, "month", null],
+  [10, 12, 24, "day", null],
+  [-14, 24, 720, "month", -420],
+] as const)("projects spend %s over %s/%s hours (%s)", (spent, elapsed, hours, kind, expected) => {
+  expect(forecast(spent, elapsed, hours, kind)).toBe(expected);
+});
+it.each([
+  ["2026-11-04T00:31:58Z", 58.26, 578.3206060095],
+  ["2026-11-04T03:15:00Z", 58.26, 557.4378737542],
+  ["2026-11-04T14:15:00+11:00", 58.26, 557.4378737542],
+  ["2024-02-15T00:00:00Z", 196, 406],
+  ["2026-01-15T00:00:00Z", 196, 434],
+] as const)("uses actual UTC month hours at %s", (at, spent, expected) => {
+  const p = period(new Date(at), "month");
+  expect(forecast(spent, p.elapsedHours, p.hours, "month")).toBeCloseTo(expected, 8);
+});
+it("has no month run rate at the UTC rollover", () => {
+  const p = period(new Date("2026-12-01T11:00:00+11:00"), "month");
+  expect(forecast(0, p.elapsedHours, p.hours, "month")).toBeNull();
+});
 it.each([shipped, solo, team])("validates examples", (c) =>
   expect(ConfigSchema.safeParse(c).success).toBe(true),
 );

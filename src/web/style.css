@@ -269,7 +269,7 @@ details .table-wrap {
 }
 .columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 60px;
 }
 .subsection {
@@ -347,9 +347,28 @@ details .table-wrap {
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
   font-size: 13px;
+  gap: 12px;
+}
+.ranked li > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ranked strong {
   font-weight: 650;
+  flex-shrink: 0;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tag {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 6px;
+  overflow-wrap: anywhere;
 }
 .empty {
   color: var(--muted);
@@ -545,7 +564,14 @@ footer {
   .header nav {
     order: 3;
     width: 100%;
-    height: 44px;
+    min-width: 0;
+    flex-wrap: wrap;
+    overflow: visible;
+    column-gap: 20px;
+    row-gap: 0;
+  }
+  .header nav a {
+    min-height: 44px;
   }
   .header-tools {
     margin-left: auto;
@@ -570,7 +596,7 @@ footer {
     font-size: 22px;
   }
   .columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
   .page-heading {
@@ -585,6 +611,10 @@ footer {
   }
   .header-tools {
     gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+    max-width: 100%;
   }
   .header nav {
     gap: 20px;

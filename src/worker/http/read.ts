@@ -3,12 +3,14 @@ import type { SpendRow } from "../../shared/api-types";
 import type { Config } from "../../shared/config-schema";
 import { addDays, day, iso, period } from "../../shared/periods";
 import { channelConfigured } from "../alerts/dispatch";
+import { forecast } from "../budgets/forecast";
 import { getMeta, setMeta } from "../db/repo/state";
 import type { Deps } from "../deps";
 import { mode } from "../enforcement/plan";
 import { providerSecrets, secret } from "../env";
 import { convert, type FxRate, rateFor } from "../fx/convert";
 import { hash } from "../lib/hash";
+import { PROVIDERS, providerConfiguration } from "../providers/registry";
 export class InputError extends Error {}
 const date = z.iso.date();
 const paramsSchema = z.object({
@@ -87,7 +89,7 @@ function grouping(group: string) {
   if (group === "workspace")
     return "COALESCE((SELECT e.name FROM entities e WHERE e.provider=s.provider AND e.kind='workspace' AND e.id=s.workspace_id),NULLIF(s.workspace_id,''),'Default workspace') || ' · ' || s.provider || ' · ' || substr(s.workspace_id,-8)";
   if (group === "api_key")
-    return "COALESCE((SELECT e.name FROM entities e WHERE e.provider=s.provider AND e.kind='api_key' AND e.id=s.api_key_id),NULLIF(s.api_key_id,''),'No key (Console)') || ' · ' || s.provider || ' · ' || substr(s.api_key_id,-8)";
+    return "COALESCE(NULLIF(s.api_key_id,''),'No key (Console)') || ' · ' || COALESCE((SELECT e.name FROM entities e WHERE e.provider=s.provider AND e.kind='api_key' AND e.id=s.api_key_id),'Unnamed key') || ' · ' || s.provider";
   return "COALESCE((SELECT value FROM entity_tags t WHERE t.provider=s.provider AND t.workspace_id=s.workspace_id AND t.api_key_id=s.api_key_id AND t.dimension=?),'(untagged)')";
 }
 export async function spend(deps: Deps, p: Params) {
@@ -260,6 +262,16 @@ export async function budgets(deps: Deps) {
 }
 export async function status(deps: Deps) {
   const db = deps.env.DB;
+  const jobs = (
+    await db.prepare("SELECT * FROM sync_state ORDER BY job").all<{
+      job: string;
+      provider: string;
+      last_success_at: string | null;
+    }>()
+  ).results;
+  const stored = (
+    await db.prepare("SELECT DISTINCT provider FROM spend_daily").all<{ provider: string }>()
+  ).results;
   const names = new Set([
     "DASHBOARD_TOKEN",
     "READ_API_TOKEN",
@@ -277,14 +289,20 @@ export async function status(deps: Deps) {
       .prepare("SELECT MAX(version) v FROM schema_migrations")
       .first<number>("v"),
     version: "0.1.0",
-    providers: Object.entries(deps.config.providers).map(([provider, p]) => ({
-      provider,
-      enabled: p.enabled,
-      configured: Boolean(
-        secret(deps.env, providerSecrets[provider as keyof typeof providerSecrets]),
-      ),
+    providers: PROVIDERS.map((provider) => ({
+      provider: provider.id,
+      ...providerConfiguration(deps, provider),
+      hasData: stored.some((row) => row.provider === provider.id),
+      lastSuccessAt:
+        jobs
+          .filter((job) => job.provider === provider.id && !job.job.endsWith(".entities"))
+          .map((job) => job.last_success_at)
+          .filter((at): at is string => Boolean(at))
+          .sort()
+          .at(-1) ?? null,
     })),
-    jobs: (await db.prepare("SELECT * FROM sync_state ORDER BY job").all()).results,
+    syntheticDemo: (await getMeta(db, "synthetic_demo")) === "true",
+    jobs,
     lastTick: JSON.parse((await getMeta(db, "last_tick")) ?? "null"),
     secrets: Object.fromEntries([...names].map((n) => [n, Boolean(secret(deps.env, n))])),
     channels: deps.config.channels.map((ch) => ({
@@ -359,7 +377,7 @@ export async function summary(deps: Deps, p: Params) {
       yesterday: total(day(addDays(deps.now(), -1)), day(addDays(deps.now(), -1))),
       weekToDate: total(week.start.slice(0, 10)),
       monthToDate: mtd,
-      monthForecast: month.elapsedHours > 0 ? (mtd / month.elapsedHours) * month.hours : null,
+      monthForecast: forecast(mtd, month.elapsedHours, month.hours, "month"),
     },
     byProvider,
     budgets: (await budgets(deps)).budgets,

@@ -195,3 +195,119 @@ it("groups populated spend by every dimension, filters tags, and escapes CSV for
   expect(csv).toContain("'=HYPERLINK()");
   expect(csv.split("\r\n")[0]).toContain("team");
 });
+
+it("keeps full key IDs and separates keys with matching names and suffixes", async () => {
+  const c = deps({}, { DASHBOARD_TOKEN: token });
+  const ids = ["key_example_first_12345678", "key_example_second_12345678"];
+  for (const id of ids) {
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        "INSERT INTO entities(provider,kind,id,name,workspace_id,first_seen_at,last_seen_at) VALUES('openai','api_key',?,'Synthetic bot','workspace_example',?,?)",
+      ).bind(id, NOW.toISOString(), NOW.toISOString()),
+      c.env.DB.prepare(
+        "INSERT INTO spend_daily VALUES('openai','2026-11-03','workspace_example',?,'model-example','billed',1000000,0,?)",
+      ).bind(id, NOW.toISOString()),
+    ]);
+  }
+  const response = await createApp(c).request("https://example.com/api/v1/spend?groupBy=api_key", {
+    headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
+  });
+  const data = SpendResponseSchema.parse(await response.json());
+  expect(data.rows.map((r) => r.group).sort()).toEqual(
+    ids.map((id) => `${id} · Synthetic bot · openai`),
+  );
+  expect(data.rows.map((r) => r.amount)).toEqual([1, 1]);
+});
+
+it.each([
+  [true, undefined, "not_configured", false],
+  [true, "", "not_configured", false],
+  [true, "   ", "not_configured", false],
+  [true, " - ", "not_configured", false],
+  [true, " test-provider-key-not-real ", "configured", true],
+  [false, "test-provider-key-not-real", "disabled", true],
+  [false, undefined, "disabled", false],
+] as const)(
+  "reports provider configuration from sync eligibility: enabled=%s credential=%j",
+  async (enabled, credential, state, configured) => {
+    const c = deps(
+      { providers: { openrouter: { enabled } } },
+      { DASHBOARD_TOKEN: token, OPENROUTER_MANAGEMENT_KEY: credential },
+    );
+    const response = await createApp(c).request("https://example.com/api/v1/status", {
+      headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
+    });
+    const body = await response.json<{ providers: unknown[] }>();
+    expect(body.providers).toContainEqual({
+      provider: "openrouter",
+      enabled,
+      configured,
+      status: state,
+      hasData: false,
+      lastSuccessAt: null,
+    });
+    expect(JSON.stringify(body)).not.toContain("test-provider-key-not-real");
+  },
+);
+
+it("distinguishes seeded spend, entity discovery, and a successful data sync", async () => {
+  const c = deps({}, { DASHBOARD_TOKEN: token });
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "INSERT INTO spend_daily VALUES('openrouter','2026-11-03','workspace_example','key_example','model-example','billed',1000000,0,?)",
+    ).bind(NOW.toISOString()),
+    c.env.DB.prepare("INSERT INTO meta(k,v) VALUES('synthetic_demo','true')"),
+    c.env.DB.prepare(
+      "INSERT INTO sync_state(job,provider,last_success_at) VALUES('openrouter.entities','openrouter',?)",
+    ).bind(NOW.toISOString()),
+  ]);
+  const app = createApp(c);
+  const headers = { cookie: `asd_session=${await createSession(token, NOW)}` };
+  const first = await (await app.request("https://example.com/api/v1/status", { headers })).json<{
+    syntheticDemo: boolean;
+    providers: unknown[];
+  }>();
+  expect(first.syntheticDemo).toBe(true);
+  expect(first.providers).toContainEqual({
+    provider: "openrouter",
+    enabled: false,
+    configured: false,
+    status: "disabled",
+    hasData: true,
+    lastSuccessAt: null,
+  });
+  await c.env.DB.prepare(
+    "INSERT INTO sync_state(job,provider,last_success_at) VALUES('openrouter.cost_daily','openrouter',?)",
+  )
+    .bind(NOW.toISOString())
+    .run();
+  const second = await (await app.request("https://example.com/api/v1/status", { headers })).json<{
+    providers: { provider: string; lastSuccessAt: string | null }[];
+  }>();
+  expect(second.providers.find((p) => p.provider === "openrouter")?.lastSuccessAt).toBe(
+    NOW.toISOString(),
+  );
+});
+
+it("projects MTD dollars once across billed, allocated and estimated daily spend", async () => {
+  const c = deps({}, { DASHBOARD_TOKEN: token });
+  for (const [day, micros, basis] of [
+    ["2026-11-01", 15330000, "allocated"],
+    ["2026-11-02", 14820000, "billed"],
+    ["2026-11-03", 14310000, "estimated"],
+    ["2026-11-04", 13800000, "billed"],
+  ]) {
+    await c.env.DB.prepare(
+      "INSERT INTO spend_daily VALUES('openai',?,'workspace_example','key_example','model-example',?,?,0,?)",
+    )
+      .bind(day, basis, micros, NOW.toISOString())
+      .run();
+  }
+  const response = await createApp(c).request("https://example.com/api/v1/summary", {
+    headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
+  });
+  const { totals } = SummaryResponseSchema.parse(await response.json());
+  expect(totals.today).toBeCloseTo(13.8);
+  expect(totals.monthToDate).toBeCloseTo(58.26);
+  expect(totals.monthForecast).toBeCloseTo(557.4378737542, 8);
+});
