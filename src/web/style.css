@@ -359,6 +359,17 @@ details .table-wrap {
   font-weight: 650;
   flex-shrink: 0;
 }
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tag {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 6px;
+  overflow-wrap: anywhere;
+}
 .empty {
   color: var(--muted);
   font-size: 13px;

@@ -2,6 +2,7 @@ import { Chart, registerables } from "chart.js";
 import { type ComponentChildren, render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { SpendRow } from "../shared/api-types";
+import { tagLabels } from "./format";
 import "./style.css";
 
 Chart.register(...registerables);
@@ -190,6 +191,20 @@ function BasisMix({ row }: { row: Row }) {
 }
 function Empty({ children = "No data for this period." }: { children?: ComponentChildren }) {
   return <p class="empty">{children}</p>;
+}
+function Tags({ value }: { value: unknown }) {
+  const labels = tagLabels(value);
+  return labels.length ? (
+    <span class="tags">
+      {labels.map((label) => (
+        <span class="tag" key={label}>
+          {label}
+        </span>
+      ))}
+    </span>
+  ) : (
+    <>—</>
+  );
 }
 function Table({ headings, children }: { headings: string[]; children: ComponentChildren }) {
   return (
@@ -1133,7 +1148,9 @@ function EntityTable({ data, money }: { data: unknown; money: (n: unknown) => st
               <td>
                 <span class="status">{text(r.status)}</span>
               </td>
-              <td>{text(r.tags)}</td>
+              <td>
+                <Tags value={r.tags} />
+              </td>
               <td>{money(r.monthToDate ?? r.mtdSpend ?? r.spend)}</td>
               <td>{date(r.lastUsedAt ?? r.last_used_at ?? r.lastUsed)}</td>
             </tr>
