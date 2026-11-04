@@ -1,0 +1,11 @@
+{
+  "data": [
+    {
+      "id": "wrkspc_EXAMPLE01",
+      "name": "Engineering",
+      "archived_at": null
+    }
+  ],
+  "has_more": false,
+  "last_id": "wrkspc_EXAMPLE01"
+}

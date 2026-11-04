@@ -1,0 +1,14 @@
+[
+  {
+    "date": "2026-10-30",
+    "base": "USD",
+    "quote": "AUD",
+    "rate": 1.4
+  },
+  {
+    "date": "2026-11-02",
+    "base": "USD",
+    "quote": "AUD",
+    "rate": 1.5
+  }
+]

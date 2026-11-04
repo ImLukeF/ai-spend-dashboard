@@ -1,0 +1,9 @@
+# Currency and tax display
+
+Facts store integer micro-USD (one million per US dollar). Anthropic decimal cents convert exactly with string/BigInt arithmetic; other provider dollar values round to micros. Display values may be fractional because FX and tax apply at read time, and Intl.NumberFormat rounds only the display.
+
+Frankfurter v2 uses USD base and an explicit provider (ECB by default). For each spend day choose the most recent rate on/before it; if none, use the earliest following rate. Weekend/holiday gaps are normal. If no usable rates exist, show USD and a warning; never present missing FX as a reliable basis for live enforcement. Apply card markup only for non-USD display: `USD × rate × (1 + markupPercent/100)`. Then multiply by `(1 + taxPercent/100)` when selected. Budgets use their own configured currency and includeTax setting, independent of the browser's view.
+
+FX: ECB euro reference rates via Frankfurter; USD cross-rates are derived. For information only. See [Frankfurter](https://frankfurter.dev/) and [ECB reuse terms](https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html). ECB euro reference data is converted to USD cross-rates; this modification is stated in the UI and NOTICE. Rates are not card-settlement quotes. RBA is optional at your discretion because WM/Reuters-derived AUD/USD redistribution terms are UNVERIFIED.
+
+Tax-inclusive view adds the configured percentage for budgeting. It is not tax advice and may not match your invoice. Provider amount pre-tax status and provider-specific Australian GST charging remain UNVERIFIED. Tax handling depends on your registration, supplier, location and invoice; the software does not determine tax liability. The example's 10% GST is a configurable demonstration, not a claim about a particular provider's bill. Ask an appropriately qualified adviser about your circumstances.

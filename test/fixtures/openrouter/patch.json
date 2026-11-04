@@ -1,0 +1,13 @@
+{
+  "data": {
+    "hash": "example0hash01",
+    "name": "Example bot",
+    "label": "Example label",
+    "disabled": true,
+    "workspace_id": "workspace_example",
+    "limit": 10,
+    "limit_reset": "daily",
+    "usage_daily": 1,
+    "usage": 2
+  }
+}
