@@ -288,3 +288,26 @@ it("distinguishes seeded spend, entity discovery, and a successful data sync", a
     NOW.toISOString(),
   );
 });
+
+it("projects MTD dollars once across billed, allocated and estimated daily spend", async () => {
+  const c = deps({}, { DASHBOARD_TOKEN: token });
+  for (const [day, micros, basis] of [
+    ["2026-11-01", 15330000, "allocated"],
+    ["2026-11-02", 14820000, "billed"],
+    ["2026-11-03", 14310000, "estimated"],
+    ["2026-11-04", 13800000, "billed"],
+  ]) {
+    await c.env.DB.prepare(
+      "INSERT INTO spend_daily VALUES('openai',?,'workspace_example','key_example','model-example',?,?,0,?)",
+    )
+      .bind(day, basis, micros, NOW.toISOString())
+      .run();
+  }
+  const response = await createApp(c).request("https://example.com/api/v1/summary", {
+    headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
+  });
+  const { totals } = SummaryResponseSchema.parse(await response.json());
+  expect(totals.today).toBeCloseTo(13.8);
+  expect(totals.monthToDate).toBeCloseTo(58.26);
+  expect(totals.monthForecast).toBeCloseTo(557.4378737542, 8);
+});

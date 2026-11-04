@@ -3,6 +3,7 @@ import type { SpendRow } from "../../shared/api-types";
 import type { Config } from "../../shared/config-schema";
 import { addDays, day, iso, period } from "../../shared/periods";
 import { channelConfigured } from "../alerts/dispatch";
+import { forecast } from "../budgets/forecast";
 import { getMeta, setMeta } from "../db/repo/state";
 import type { Deps } from "../deps";
 import { mode } from "../enforcement/plan";
@@ -376,7 +377,7 @@ export async function summary(deps: Deps, p: Params) {
       yesterday: total(day(addDays(deps.now(), -1)), day(addDays(deps.now(), -1))),
       weekToDate: total(week.start.slice(0, 10)),
       monthToDate: mtd,
-      monthForecast: month.elapsedHours > 0 ? (mtd / month.elapsedHours) * month.hours : null,
+      monthForecast: forecast(mtd, month.elapsedHours, month.hours, "month"),
     },
     byProvider,
     budgets: (await budgets(deps)).budgets,

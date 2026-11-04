@@ -655,10 +655,18 @@ function App() {
                 ["Yesterday", "yesterday"],
                 ["Week to date", "weekToDate"],
                 ["Month to date", "monthToDate"],
-                ["Month forecast", "monthForecast"],
+                ["Month-end run rate (UTC)", "monthForecast"],
               ].map(([label, key]) => (
                 <div>
-                  <span>{label}</span>
+                  <span
+                    title={
+                      key === "monthForecast"
+                        ? "Month-to-date spend ÷ elapsed UTC hours × hours in this month. Includes today's partial UTC day; this is a projection, not a bill."
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </span>
                   <strong>{summaryMoney(summary.totals?.[key || ""])}</strong>
                 </div>
               ))}
