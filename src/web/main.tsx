@@ -2,6 +2,7 @@ import { Chart, registerables } from "chart.js";
 import { type ComponentChildren, render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { SpendRow } from "../shared/api-types";
+import { valueAxis } from "./chart";
 import { tagLabels } from "./format";
 import "./style.css";
 
@@ -228,10 +229,12 @@ function ChartView({
   data,
   label,
   money,
+  currency,
 }: {
   data: unknown;
   label: string;
   money: (n: unknown) => string;
+  currency?: string;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const series = rows(data, "series", "data", "rows");
@@ -274,13 +277,20 @@ function ChartView({
           : { duration: 350 },
         scales: {
           x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, beginAtZero: true },
+          y: valueAxis(currency),
         },
-        plugins: { legend: { position: "bottom", labels: { boxWidth: 10, usePointStyle: true } } },
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 10, usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.dataset.label}: ${money(context.parsed.y)}`,
+            },
+          },
+        },
       },
     });
     return () => chart.destroy();
-  }, [data]);
+  }, [data, currency]);
   if (!series.length) return <Empty />;
   return (
     <>
@@ -289,7 +299,7 @@ function ChartView({
       </div>
       <details>
         <summary>View chart data</summary>
-        <Table headings={["Date", "Group", "Amount", "Basis"]}>
+        <Table headings={["Date", "Group", currency ? `Spend (${currency})` : "Tokens", "Basis"]}>
           {series.map((r, i) => (
             <tr key={i}>
               <td>{text(r.day ?? r.date ?? r.bucket ?? r.period_start ?? r.time)}</td>
@@ -679,7 +689,12 @@ function App() {
                 </div>
                 <a href="#/explore">Explore spend →</a>
               </div>
-              <ChartView data={result[0]} label="Daily spend by provider" money={spendMoney(0)} />
+              <ChartView
+                data={result[0]}
+                label="Daily spend by provider"
+                money={spendMoney(0)}
+                currency={result[0]?.currency || "USD"}
+              />
             </section>
             <div class="columns">
               <section class="section">
@@ -815,8 +830,9 @@ function App() {
               </div>
               <ChartView
                 data={range === "24h" ? result[1] : result[0]}
-                label="Spend over time"
+                label={range === "24h" ? "Hourly token usage" : "Spend over time"}
                 money={range === "24h" ? number : spendMoney(0)}
+                currency={range === "24h" ? undefined : result[0]?.currency || "USD"}
               />
             </section>
             <section class="section">
