@@ -5,7 +5,7 @@ import { analytics, keysPage } from "./schemas";
 export async function listKeys(ctx: JobCtx) {
   const rows = [];
   let offset = 0;
-  let last = Infinity;
+  let last = 0;
   for (let page = 0; page < 20; page++) {
     const p = await providerFetch(
       ctx,

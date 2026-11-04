@@ -33,6 +33,7 @@ import aiU from "../fixtures/openai/usage-day.json";
 import orData from "../fixtures/openrouter/analytics.json";
 import orTruncated from "../fixtures/openrouter/analytics-truncated.json";
 import orKeys from "../fixtures/openrouter/keys-page1.json";
+import orKeys2 from "../fixtures/openrouter/keys-page2.json";
 import { deps, json } from "../helpers";
 
 const window = { start: "2026-11-03T00:00:00Z", end: "2026-11-04T00:00:00Z" };
@@ -175,4 +176,39 @@ it("splits truncated OpenRouter ranges and never silently drops rows", async () 
   });
   expect(rows).toEqual([]);
   expect(query).toBe(3);
+});
+const orKey = (n: number) => ({ ...orKeys.data[0], hash: `example0hash1${n}` });
+it.each([
+  {
+    stop: "an empty page",
+    pages: [orKeys, orKeys2, { data: [] }],
+    offsets: ["0", "1", "2"],
+    hashes: ["example0hash01", "example0hash02"],
+  },
+  {
+    stop: "a shorter page",
+    pages: [[1, 2], [3, 4], [5]].map((p) => ({ data: p.map(orKey) })),
+    offsets: ["0", "2", "4"],
+    hashes: [11, 12, 13, 14, 15].map((n) => `example0hash${n}`),
+  },
+])("pages OpenRouter keys until $stop", async ({ pages, offsets, hashes }) => {
+  const c = ctx();
+  const seen: (string | null)[] = [];
+  c.deps.fetch = async (url) => {
+    seen.push(new URL(String(url)).searchParams.get("offset"));
+    return json(pages[seen.length - 1] ?? { data: [] });
+  };
+  const result = await openrouter.pullEntities(c, null);
+  expect(seen).toEqual(offsets);
+  expect(result.rows.map((r) => r.id)).toEqual(hashes);
+});
+it("fails OpenRouter key paging after 20 full pages", async () => {
+  const c = ctx();
+  let calls = 0;
+  c.deps.fetch = async () => {
+    calls++;
+    return json(orKeys);
+  };
+  await expect(openrouter.pullEntities(c, null)).rejects.toThrow("pagination cap");
+  expect(calls).toBe(20);
 });
