@@ -9,6 +9,7 @@ import { mode } from "../enforcement/plan";
 import { providerSecrets, secret } from "../env";
 import { convert, type FxRate, rateFor } from "../fx/convert";
 import { hash } from "../lib/hash";
+import { PROVIDERS, providerConfiguration } from "../providers/registry";
 export class InputError extends Error {}
 const date = z.iso.date();
 const paramsSchema = z.object({
@@ -260,6 +261,16 @@ export async function budgets(deps: Deps) {
 }
 export async function status(deps: Deps) {
   const db = deps.env.DB;
+  const jobs = (
+    await db.prepare("SELECT * FROM sync_state ORDER BY job").all<{
+      job: string;
+      provider: string;
+      last_success_at: string | null;
+    }>()
+  ).results;
+  const stored = (
+    await db.prepare("SELECT DISTINCT provider FROM spend_daily").all<{ provider: string }>()
+  ).results;
   const names = new Set([
     "DASHBOARD_TOKEN",
     "READ_API_TOKEN",
@@ -277,14 +288,20 @@ export async function status(deps: Deps) {
       .prepare("SELECT MAX(version) v FROM schema_migrations")
       .first<number>("v"),
     version: "0.1.0",
-    providers: Object.entries(deps.config.providers).map(([provider, p]) => ({
-      provider,
-      enabled: p.enabled,
-      configured: Boolean(
-        secret(deps.env, providerSecrets[provider as keyof typeof providerSecrets]),
-      ),
+    providers: PROVIDERS.map((provider) => ({
+      provider: provider.id,
+      ...providerConfiguration(deps, provider),
+      hasData: stored.some((row) => row.provider === provider.id),
+      lastSuccessAt:
+        jobs
+          .filter((job) => job.provider === provider.id && !job.job.endsWith(".entities"))
+          .map((job) => job.last_success_at)
+          .filter((at): at is string => Boolean(at))
+          .sort()
+          .at(-1) ?? null,
     })),
-    jobs: (await db.prepare("SELECT * FROM sync_state ORDER BY job").all()).results,
+    syntheticDemo: (await getMeta(db, "synthetic_demo")) === "true",
+    jobs,
     lastTick: JSON.parse((await getMeta(db, "last_tick")) ?? "null"),
     secrets: Object.fromEntries([...names].map((n) => [n, Boolean(secret(deps.env, n))])),
     channels: deps.config.channels.map((ch) => ({

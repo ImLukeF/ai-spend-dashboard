@@ -218,3 +218,73 @@ it("keeps full key IDs and separates keys with matching names and suffixes", asy
   );
   expect(data.rows.map((r) => r.amount)).toEqual([1, 1]);
 });
+
+it.each([
+  [true, undefined, "not_configured", false],
+  [true, "", "not_configured", false],
+  [true, "   ", "not_configured", false],
+  [true, " - ", "not_configured", false],
+  [true, " test-provider-key-not-real ", "configured", true],
+  [false, "test-provider-key-not-real", "disabled", true],
+  [false, undefined, "disabled", false],
+] as const)(
+  "reports provider configuration from sync eligibility: enabled=%s credential=%j",
+  async (enabled, credential, state, configured) => {
+    const c = deps(
+      { providers: { openrouter: { enabled } } },
+      { DASHBOARD_TOKEN: token, OPENROUTER_MANAGEMENT_KEY: credential },
+    );
+    const response = await createApp(c).request("https://example.com/api/v1/status", {
+      headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
+    });
+    const body = await response.json<{ providers: unknown[] }>();
+    expect(body.providers).toContainEqual({
+      provider: "openrouter",
+      enabled,
+      configured,
+      status: state,
+      hasData: false,
+      lastSuccessAt: null,
+    });
+    expect(JSON.stringify(body)).not.toContain("test-provider-key-not-real");
+  },
+);
+
+it("distinguishes seeded spend, entity discovery, and a successful data sync", async () => {
+  const c = deps({}, { DASHBOARD_TOKEN: token });
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "INSERT INTO spend_daily VALUES('openrouter','2026-11-03','workspace_example','key_example','model-example','billed',1000000,0,?)",
+    ).bind(NOW.toISOString()),
+    c.env.DB.prepare("INSERT INTO meta(k,v) VALUES('synthetic_demo','true')"),
+    c.env.DB.prepare(
+      "INSERT INTO sync_state(job,provider,last_success_at) VALUES('openrouter.entities','openrouter',?)",
+    ).bind(NOW.toISOString()),
+  ]);
+  const app = createApp(c);
+  const headers = { cookie: `asd_session=${await createSession(token, NOW)}` };
+  const first = await (await app.request("https://example.com/api/v1/status", { headers })).json<{
+    syntheticDemo: boolean;
+    providers: unknown[];
+  }>();
+  expect(first.syntheticDemo).toBe(true);
+  expect(first.providers).toContainEqual({
+    provider: "openrouter",
+    enabled: false,
+    configured: false,
+    status: "disabled",
+    hasData: true,
+    lastSuccessAt: null,
+  });
+  await c.env.DB.prepare(
+    "INSERT INTO sync_state(job,provider,last_success_at) VALUES('openrouter.cost_daily','openrouter',?)",
+  )
+    .bind(NOW.toISOString())
+    .run();
+  const second = await (await app.request("https://example.com/api/v1/status", { headers })).json<{
+    providers: { provider: string; lastSuccessAt: string | null }[];
+  }>();
+  expect(second.providers.find((p) => p.provider === "openrouter")?.lastSuccessAt).toBe(
+    NOW.toISOString(),
+  );
+});

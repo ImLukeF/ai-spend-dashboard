@@ -74,6 +74,8 @@ type Row = Partial<SpendRow> & {
   protected?: boolean;
   enabled?: boolean;
   configured?: boolean;
+  hasData?: boolean;
+  syntheticDemo?: boolean;
   job?: string;
   thresholdsHit?: unknown;
   thresholds_hit?: unknown;
@@ -1265,13 +1267,29 @@ function Settings({
       </section>
       <section class="section">
         <h2>Providers</h2>
+        {status.syntheticDemo && (
+          <p class="banner">
+            Synthetic demo data is loaded. Stored spend does not mean a provider is configured or
+            has been synced.
+          </p>
+        )}
         {rows(status, "providers").length ? (
-          <Table headings={["Provider", "Enabled", "Secret"]}>
+          <Table
+            headings={["Provider", "Configuration", "Credential", "Stored spend", "Last data sync"]}
+          >
             {rows(status, "providers").map((p, i) => (
               <tr key={i}>
                 <td>{text(p.provider)}</td>
-                <td>{p.enabled ? "Yes" : "No"}</td>
+                <td>
+                  {p.status === "configured"
+                    ? "Configured"
+                    : p.status === "disabled"
+                      ? "Disabled"
+                      : "Not configured"}
+                </td>
                 <td>{p.configured ? "Set" : "Not set"}</td>
+                <td>{p.hasData ? "Available" : "None"}</td>
+                <td>{p.lastSuccessAt ? date(p.lastSuccessAt) : "Never"}</td>
               </tr>
             ))}
           </Table>

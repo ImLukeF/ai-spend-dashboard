@@ -14,7 +14,7 @@ import { executeEnforcement, recoverPlanned, restoreEnforcement } from "../enfor
 import { secret } from "../env";
 import { pullFx } from "../fx/frankfurter";
 import { redact } from "../lib/redact";
-import { PROVIDERS } from "../providers/registry";
+import { PROVIDERS, providerConfiguration } from "../providers/registry";
 import type { CostRow, JobCtx, UsageRow } from "../providers/types";
 import { materialise } from "../tags/materialise";
 import { BudgetCounter, BudgetExceeded, countedDb } from "./budget";
@@ -80,9 +80,7 @@ export async function tick(input: Deps) {
       (await getMeta(deps.env.DB, "first_run_at")) ?? iso(now),
     );
     const states = (await deps.env.DB.prepare("SELECT * FROM sync_state").all<SyncState>()).results;
-    const jobs = PROVIDERS.filter(
-      (p) => deps.config.providers[p.id].enabled && secret(deps.env, p.secretName),
-    )
+    const jobs = PROVIDERS.filter((p) => providerConfiguration(deps, p).status === "configured")
       .flatMap(jobsFor)
       .filter((j) => {
         const s = states.find((s) => s.job === j.id);
