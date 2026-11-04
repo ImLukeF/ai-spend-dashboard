@@ -2,7 +2,7 @@
 
 One account per provider. Every request uses a fixed HTTPS origin, no redirects, a 25-second timeout and validated JSON. Responses are capped at 10 MB, including streamed bodies. Retry 429/5xx up to three attempts, respecting Retry-After (seconds/date), bounded backoff and the tick's resource budget. Authentication and other 4xx failures are not retried. Incomplete/truncated snapshots are never committed. No prompt or completion data is collected.
 
-This document records the plan's **UNVERIFIED** assumptions; fixture tests verify our handling, not live account availability. Provider APIs and permissions may change. No authenticated provider request was made during development, including OpenRouter analytics/meta: metric names follow the documented fixture contract and drift fails visibly.
+This document records **UNVERIFIED** assumptions; fixture tests verify our handling, not live account availability. Provider APIs and permissions may change. No authenticated provider request was made during development, including OpenRouter analytics/meta: metric names follow the documented fixture contract and drift fails visibly.
 
 ## Anthropic
 

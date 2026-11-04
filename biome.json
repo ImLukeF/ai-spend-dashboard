@@ -1,13 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
   "files": {
-    "includes": [
-      "**",
-      "!!worker-configuration.d.ts",
-      "!!PLAN.md",
-      "!!.cache",
-      "!!package-lock.json"
-    ]
+    "includes": ["**", "!!worker-configuration.d.ts", "!!.cache", "!!package-lock.json"]
   },
   "formatter": {
     "indentStyle": "space",
