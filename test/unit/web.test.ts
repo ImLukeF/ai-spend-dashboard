@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { valueAxis } from "../../src/web/chart";
-import { tagLabels } from "../../src/web/format";
+import { jobStatus, tagLabels } from "../../src/web/format";
 
 it.each([{}, null, undefined, []])("renders empty or missing tags without raw JSON: %j", (tags) => {
   expect(tagLabels(tags)).toEqual([]);
@@ -27,4 +27,16 @@ it("keeps hourly token usage free of currency units", () => {
   const axis = valueAxis();
   expect(axis.title).toEqual({ display: true, text: "Tokens" });
   expect(axis.ticks.callback(14000)).toBe("14,000");
+});
+it.each([
+  [{ job: "openai.backfill", provider: "openai", cursor: "done" }, "Complete"],
+  [{ job: "openai.cost_daily", provider: "openai", consecutive_failures: 3 }, "Failing (3)"],
+  [{ job: "openrouter.cost_daily", provider: "openrouter" }, "Paused"],
+  [{ job: "openai.cost_daily", provider: "openai", consecutive_failures: 0 }, "OK"],
+])("shows the real state of sync job %j", (job, expected) => {
+  const providers = [
+    { provider: "openai", status: "configured" },
+    { provider: "openrouter", status: "disabled" },
+  ];
+  expect(jobStatus(job, providers)).toBe(expected);
 });

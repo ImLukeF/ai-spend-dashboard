@@ -3,7 +3,7 @@ import { type ComponentChildren, render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { SpendRow } from "../shared/api-types";
 import { valueAxis } from "./chart";
-import { tagLabels } from "./format";
+import { jobStatus, tagLabels } from "./format";
 import "./style.css";
 
 Chart.register(...registerables);
@@ -1356,7 +1356,7 @@ function Settings({
             {jobs.map((r, i) => (
               <tr key={i}>
                 <td>{text(r.job ?? r.name ?? r.provider)}</td>
-                <td>{text(r.enabled === false ? "Disabled" : (r.status ?? "Enabled"))}</td>
+                <td>{jobStatus(r, rows(status, "providers"))}</td>
                 <td>{date(r.lastSuccessAt ?? r.last_success_at)}</td>
                 <td>{text(r.lastError ?? r.last_error)}</td>
                 <td>{text(r.rows ?? r.last_rows)}</td>
