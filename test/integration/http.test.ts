@@ -298,6 +298,22 @@ it("distinguishes seeded spend, entity discovery, and a successful data sync", a
   expect(second.providers.find((p) => p.provider === "openrouter")?.lastSuccessAt).toBe(
     NOW.toISOString(),
   );
+  const old = new Date(NOW.getTime() - 3 * 3600000).toISOString();
+  await c.env.DB.batch(
+    [
+      ["anthropic.cost_daily", old],
+      ["anthropic.usage_hourly", NOW.toISOString()],
+      ["anthropic.backfill", NOW.toISOString()],
+    ].map(([job, at]) =>
+      c.env.DB.prepare(
+        "INSERT INTO sync_state(job,provider,last_success_at) VALUES(?,'anthropic',?)",
+      ).bind(job, at),
+    ),
+  );
+  const third = await (await app.request("https://example.com/api/v1/status", { headers })).json<{
+    providers: { provider: string; lastSuccessAt: string | null }[];
+  }>();
+  expect(third.providers.find((p) => p.provider === "anthropic")?.lastSuccessAt).toBe(old);
 });
 
 it("projects MTD dollars once across billed, allocated and estimated daily spend", async () => {

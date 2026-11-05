@@ -260,6 +260,9 @@ export async function budgets(deps: Deps) {
     }),
   };
 }
+function oldestSuccess(times: (string | null)[]) {
+  return times.length && times.every(Boolean) ? ([...times].sort()[0] ?? null) : null;
+}
 export async function status(deps: Deps) {
   const db = deps.env.DB;
   const jobs = (
@@ -293,13 +296,12 @@ export async function status(deps: Deps) {
       provider: provider.id,
       ...providerConfiguration(deps, provider),
       hasData: stored.some((row) => row.provider === provider.id),
-      lastSuccessAt:
+      // The oldest recurring job, so a failing cost sync isn't hidden by a fresh usage sync.
+      lastSuccessAt: oldestSuccess(
         jobs
-          .filter((job) => job.provider === provider.id && !job.job.endsWith(".entities"))
-          .map((job) => job.last_success_at)
-          .filter((at): at is string => Boolean(at))
-          .sort()
-          .at(-1) ?? null,
+          .filter((job) => job.provider === provider.id && !/\.(entities|backfill)$/.test(job.job))
+          .map((job) => job.last_success_at),
+      ),
     })),
     syntheticDemo: (await getMeta(db, "synthetic_demo")) === "true",
     jobs,
