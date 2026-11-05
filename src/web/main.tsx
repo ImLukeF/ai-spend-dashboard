@@ -369,6 +369,7 @@ function App() {
       .catch((e) => {
         setMe(null);
         if (e.status === 401) location.hash = "#/login";
+        else if (e.code === "config_invalid") location.hash = "#/config-invalid";
         else if (e.code === "auth_not_configured" || e.status === 503) location.hash = "#/setup";
         else setError(e.message);
       })
@@ -490,7 +491,7 @@ function App() {
       setFrom(d.toISOString().slice(0, 10));
     } else if (value !== "custom") setFrom(daysAgo(value === "24h" ? 1 : Number(value) - 1));
   };
-  if (!me && (path === "/login" || path === "/setup" || loading))
+  if (!me && (path === "/login" || path === "/setup" || path === "/config-invalid" || loading))
     return (
       <main class="auth">
         <a class="brand" href="#/">
@@ -498,6 +499,19 @@ function App() {
         </a>
         {loading ? (
           <p>Loading…</p>
+        ) : path === "/config-invalid" ? (
+          <>
+            <p class="eyebrow">Configuration</p>
+            <h1>Fix spend.config.ts</h1>
+            <p>
+              The configuration failed validation, so the dashboard stays closed. Run{" "}
+              <code>npx vitest run test/unit/core.test.ts</code> to see each error (they are also in
+              the Worker logs), fix them and redeploy.
+            </p>
+            <a href="https://github.com/ImLukeF/burnrate/blob/main/docs/configuration.md">
+              Read the configuration reference ↗
+            </a>
+          </>
         ) : path === "/setup" ? (
           <>
             <p class="eyebrow">Getting started</p>
@@ -508,7 +522,10 @@ function App() {
             </p>
             <ol>
               <li>Choose an authentication mode in your configuration.</li>
-              <li>Set the required secrets in your Worker environment.</li>
+              <li>
+                Set a <code>DASHBOARD_TOKEN</code> secret of at least 32 random characters, or the
+                Cloudflare Access secrets.
+              </li>
               <li>Refresh this page after updating the configuration.</li>
             </ol>
             <a href="https://github.com/ImLukeF/burnrate/blob/main/docs/auth.md">

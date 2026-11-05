@@ -67,7 +67,7 @@ it("has no month run rate at the UTC rollover", () => {
   expect(forecast(0, p.elapsedHours, p.hours, "month")).toBeNull();
 });
 it.each([shipped, solo, team])("validates examples", (c) =>
-  expect(ConfigSchema.safeParse(c).success).toBe(true),
+  expect(ConfigSchema.safeParse(c).error?.issues).toBeUndefined(),
 );
 it.each([
   { channels: [{ id: "Bad", type: "slack", webhookUrlSecret: "SECRET_URL" }] },

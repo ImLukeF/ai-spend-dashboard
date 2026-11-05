@@ -1,5 +1,6 @@
 # Troubleshooting
 
+- **503 config_invalid:** `spend.config.ts` failed validation and the dashboard stays closed. Run `npx vitest run test/unit/core.test.ts` to see each error; they are also in the Worker logs.
 - **503 auth_not_configured:** set a 32+ character random token, or both valid Access team origin and audience. Empty/`-` means unset. Config invalidity also fails closed; review zod paths, channels, thresholds and provider flags.
 - **401 dashboard:** sign in again after token rotation/12-hour expiry. Access JWT must have correct RS256 signature, issuer, audience and expiry. A header takes precedence over the cookie. Service identities cannot pass an email allowlist.
 - **403 admin:** check ADMIN_EMAILS and service/read-token restrictions. Send JSON and `x-asd-csrf:1` from the same origin. HTTPS cookies are Secure; use the documented loopback development URL.
