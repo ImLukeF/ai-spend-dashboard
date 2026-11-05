@@ -494,7 +494,7 @@ function App() {
     return (
       <main class="auth">
         <a class="brand" href="#/">
-          ◈ <span>AI Spend</span>
+          ◈ <span>Burnrate</span>
         </a>
         {loading ? (
           <p>Loading…</p>
@@ -511,7 +511,7 @@ function App() {
               <li>Set the required secrets in your Worker environment.</li>
               <li>Refresh this page after updating the configuration.</li>
             </ol>
-            <a href="https://github.com/ImLukeF/ai-spend-dashboard/blob/main/docs/auth.md">
+            <a href="https://github.com/ImLukeF/burnrate/blob/main/docs/auth.md">
               Read authentication setup ↗
             </a>
           </>
@@ -523,9 +523,9 @@ function App() {
   return (
     <>
       <header class="header">
-        <a class="brand" href="#/" aria-label="AI Spend overview">
+        <a class="brand" href="#/" aria-label="Burnrate overview">
           <span class="mark">◈</span>
-          <span>AI Spend</span>
+          <span>Burnrate</span>
         </a>
         <nav aria-label="Main navigation">
           {nav.map(([href, label]) => (
@@ -943,7 +943,7 @@ function PageTitle({ title, description }: { title: string; description: string 
   return (
     <div class="page-heading">
       <div>
-        <p class="eyebrow">AI Spend</p>
+        <p class="eyebrow">Burnrate</p>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
@@ -1241,7 +1241,7 @@ function Settings({
             Sync now
           </button>
         )}
-        <a href="https://github.com/ImLukeF/ai-spend-dashboard/blob/main/docs/configuration.md">
+        <a href="https://github.com/ImLukeF/burnrate/blob/main/docs/configuration.md">
           Configuration docs ↗
         </a>
       </div>

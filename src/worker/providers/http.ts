@@ -73,7 +73,7 @@ export async function providerFetch<T>(
       const headers = new Headers(init.headers);
       headers.set(
         "User-Agent",
-        "ai-spend-dashboard/0.1.0 (+https://github.com/ImLukeF/ai-spend-dashboard)",
+        "burnrate/0.1.0 (+https://github.com/ImLukeF/burnrate)",
       );
       headers.set("Accept", "application/json");
       if (init.body) headers.set("Content-Type", "application/json");

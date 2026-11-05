@@ -40,7 +40,7 @@ writeFileSync(file, `${sql.join(";\n")};\n`);
 try {
   execFileSync(
     "npx",
-    ["wrangler", "d1", "execute", "ai-spend-dashboard", "--local", `--file=${file}`],
+    ["wrangler", "d1", "execute", "burnrate", "--local", `--file=${file}`],
     {
       stdio: "pipe",
       env: {

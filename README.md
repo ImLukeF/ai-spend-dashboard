@@ -1,8 +1,14 @@
-# ai-spend-dashboard
+# Burnrate
 
-A self-hosted organisation-level AI spend dashboard on Cloudflare Workers, D1 and Cron Triggers. It pulls billing and usage APIs across keys and machines, without routing requests through a gateway or collecting local CLI logs. Your data stays in your Cloudflare account; there is no telemetry.
+See what your team spends on AI, across every key, bot and server, with budgets, alerts and an optional auto-stop.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/ImLukeF/ai-spend-dashboard)
+Burnrate is a self-hosted organisation-level AI spend dashboard on Cloudflare Workers, D1 and Cron Triggers. It pulls billing and usage APIs across keys and machines, without routing requests through a gateway or collecting local CLI logs. Your data stays in your Cloudflare account; there is no telemetry.
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/ImLukeF/burnrate)
+
+![Burnrate overview: spend by provider, budgets, top keys and top models](docs/screenshots/overview.png)
+
+More screenshots: [budgets](docs/screenshots/budgets.png) and [explore](docs/screenshots/explore.png). They use synthetic demo data.
 
 ## What v1 includes
 
@@ -108,9 +114,9 @@ Free works for small orgs. If ticks fail with CPU-limit errors, set `runtime.pla
 - UTC periods only. Weeks start Monday. Daily facts persist indefinitely by default; hourly usage retains 14 days.
 - FX gaps fall back to USD with a warning; missing FX blocks enforcement.
 - Schema drift and truncated responses fail the sync without replacing an incomplete snapshot. Check Settings and [troubleshooting](docs/troubleshooting.md).
-- No production deployment or live provider credentials were used to build this release. No screenshots are included.
+- Early release: tested against recorded provider responses, not yet against live provider accounts. Issues and feedback are welcome.
 
-Report security issues privately via [GitHub Security Advisories](https://github.com/ImLukeF/ai-spend-dashboard/security/advisories/new), not public issues. Provider admin keys can control an organisation; protect your Cloudflare account and rotate exposed keys immediately. See [SECURITY](SECURITY.md), [privacy](docs/privacy.md) and [contributing](CONTRIBUTING.md).
+Report security issues privately via [GitHub Security Advisories](https://github.com/ImLukeF/burnrate/security/advisories/new), not public issues. Provider admin keys can control an organisation; protect your Cloudflare account and rotate exposed keys immediately. See [SECURITY](SECURITY.md), [privacy](docs/privacy.md) and [contributing](CONTRIBUTING.md).
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 

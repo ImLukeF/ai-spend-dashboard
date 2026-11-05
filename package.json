@@ -1,5 +1,5 @@
 {
-  "name": "ai-spend-dashboard",
+  "name": "burnrate",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -42,7 +42,7 @@
   "cloudflare": {
     "bindings": {
       "DASHBOARD_TOKEN": {
-        "description": "Token login: generate at least 32 random characters. [Authentication](https://github.com/ImLukeF/ai-spend-dashboard/blob/main/docs/auth.md). Enter `-` if using Access."
+        "description": "Token login: generate at least 32 random characters. [Authentication](https://github.com/ImLukeF/burnrate/blob/main/docs/auth.md). Enter `-` if using Access."
       },
       "ANTHROPIC_ADMIN_KEY": {
         "description": "[Create an Anthropic admin key](https://platform.claude.com/docs/en/manage-claude/admin-api). Enter `-` if unused."

@@ -14,7 +14,7 @@ export function formatAlert(event: AlertEvent) {
     }).format(Number(n ?? 0));
   const title = event.type.startsWith("enforcement.")
     ? `${event.type === "enforcement.dry_run" ? "DRY RUN — would act" : event.type} · target ${String(d.targetId ?? "").slice(0, 4)}…`
-    : `[AI spend] ${budget?.name ?? event.type}`;
+    : `[Burnrate] ${budget?.name ?? event.type}`;
   const text = budget
     ? `${title} reached ${Number(d.percent ?? 0).toFixed(0)}% — ${money(d.spent)} of ${money(d.limit)} (${d.taxIncluded ? "incl. tax" : "excl. tax"}) · UTC${d.forecast != null ? ` · forecast ${money(d.forecast)}` : ""} · data as of ${String(d.dataAsOf ?? event.timestamp)}`
     : `${title} · ${String(d.reason ?? "")} · ${event.timestamp}`;
