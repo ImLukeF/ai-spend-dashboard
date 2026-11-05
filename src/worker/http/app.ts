@@ -218,7 +218,7 @@ export function createApp(deps: Deps) {
   });
   app.get("/api/v1/export/spend.csv", async (c) => {
     c.header("content-type", "text/csv; charset=utf-8");
-    c.header("content-disposition", 'attachment; filename="ai-spend.csv"');
+    c.header("content-disposition", 'attachment; filename="burnrate.csv"');
     return c.body(await exportCsv(deps, queryParams(new URL(c.req.url), deps)));
   });
   async function throttle(key: string, ms: number) {

@@ -38,18 +38,14 @@ sql.push(
 const file = ".cache/seed.sql";
 writeFileSync(file, `${sql.join(";\n")};\n`);
 try {
-  execFileSync(
-    "npx",
-    ["wrangler", "d1", "execute", "ai-spend-dashboard", "--local", `--file=${file}`],
-    {
-      stdio: "pipe",
-      env: {
-        ...process.env,
-        WRANGLER_SEND_METRICS: "false",
-        WRANGLER_LOG_PATH: ".cache/wrangler.log",
-      },
+  execFileSync("npx", ["wrangler", "d1", "execute", "burnrate", "--local", `--file=${file}`], {
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      WRANGLER_SEND_METRICS: "false",
+      WRANGLER_LOG_PATH: ".cache/wrangler.log",
     },
-  );
+  });
   console.log(`Loaded synthetic demo data through ${today}. No provider credentials used.`);
 } catch {
   console.error("Local seed failed; check local Wrangler/D1 availability.");

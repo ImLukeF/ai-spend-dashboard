@@ -1,6 +1,6 @@
 {
-  "name": "ai-spend-dashboard-test",
+  "name": "burnrate-test",
   "main": "../src/worker/index.ts",
   "compatibility_date": "2026-11-01",
-  "d1_databases": [{ "binding": "DB", "database_name": "ai-spend-dashboard-test" }]
+  "d1_databases": [{ "binding": "DB", "database_name": "burnrate-test" }]
 }

@@ -71,10 +71,7 @@ export async function providerFetch<T>(
     );
     try {
       const headers = new Headers(init.headers);
-      headers.set(
-        "User-Agent",
-        "ai-spend-dashboard/0.1.0 (+https://github.com/ImLukeF/ai-spend-dashboard)",
-      );
+      headers.set("User-Agent", "burnrate/0.1.0 (+https://github.com/ImLukeF/burnrate)");
       headers.set("Accept", "application/json");
       if (init.body) headers.set("Content-Type", "application/json");
       if (provider === "anthropic") {
