@@ -67,12 +67,13 @@ it("has no month run rate at the UTC rollover", () => {
   expect(forecast(0, p.elapsedHours, p.hours, "month")).toBeNull();
 });
 it.each([shipped, solo, team])("validates examples", (c) =>
-  expect(ConfigSchema.safeParse(c).success).toBe(true),
+  expect(ConfigSchema.safeParse(c).error?.issues).toBeUndefined(),
 );
 it.each([
   { channels: [{ id: "Bad", type: "slack", webhookUrlSecret: "SECRET_URL" }] },
   { budgets: [{ id: "b", name: "b", period: "day", amount: 1, thresholds: [80, 50] }] },
   { budgets: [{ id: "b", name: "b", period: "day", amount: 1, channels: ["missing"] }] },
+  { budgets: [{ id: "b", name: "b", period: "day", amount: 1, scope: { tags: { teem: ["x"] } } }] },
   {
     tags: [
       { dimension: "agent", rules: [] },
@@ -95,6 +96,15 @@ it("returns readable config errors", async () => {
   const c = await loadConfig({ display: { currency: "aud" } });
   expect(c.ok).toBe(false);
   if (!c.ok) expect(c.errors[0]).toContain("display.currency");
+});
+it("explains a pasted secret value without echoing it", async () => {
+  const pasted = "https://hooks.example.com/services/example";
+  const c = await loadConfig({ channels: [{ id: "x", type: "slack", webhookUrlSecret: pasted }] });
+  expect(c.ok).toBe(false);
+  if (!c.ok) {
+    expect(c.errors.join()).toContain("Use the secret NAME");
+    expect(c.errors.join()).not.toContain(pasted);
+  }
 });
 it("canonical hash input ignores object insertion order", () =>
   expect(canonical({ b: 1, a: { d: 2, c: 3 } })).toBe(canonical({ a: { c: 3, d: 2 }, b: 1 })));

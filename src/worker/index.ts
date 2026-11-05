@@ -6,6 +6,7 @@ import type { Bindings } from "./env";
 import { createApp } from "./http/app";
 import { SECURITY_HEADERS } from "./http/headers";
 import { tick } from "./jobs/tick";
+import { safeLog } from "./lib/redact";
 export default {
   async fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
     const url = new URL(request.url);
@@ -19,11 +20,13 @@ export default {
         { headers: { ...SECURITY_HEADERS, "cache-control": "no-store" } },
       );
     const loaded = await loadConfig();
-    if (!loaded.ok)
+    if (!loaded.ok) {
+      safeLog({ configErrors: loaded.errors });
       return Response.json(
         { error: { code: "config_invalid", message: "Invalid spend.config.ts" } },
         { status: 503, headers: { ...SECURITY_HEADERS, "cache-control": "no-store" } },
       );
+    }
     return createApp(defaultDeps(env, loaded.config)).fetch(request, undefined, ctx);
   },
   async scheduled(_controller: ScheduledController, env: Bindings, ctx: ExecutionContext) {

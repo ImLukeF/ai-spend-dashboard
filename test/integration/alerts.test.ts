@@ -47,6 +47,15 @@ it("formats safe text and HTML with no complete target IDs and bounded ntfy titl
   expect(f.title.length).toBeLessThanOrEqual(100);
   expect(new TextEncoder().encode(f.text).length).toBeLessThanOrEqual(4096);
 });
+it.each([
+  ["sync.failing", { provider: "openai", error: "HTTP 500" }, "openai: HTTP 500"],
+  ["sync.recovered", { provider: "openai" }, "· openai ·"],
+  ["test", { dashboardUrl: null }, "Test alert. This channel works."],
+])("names what happened in %s alerts", (type, data, expected) => {
+  const f = formatAlert({ id: "example", type, timestamp: "2026-11-04T03:15:00Z", data });
+  expect(f.text).toContain(expected);
+  expect(f.text).not.toContain("·  ·");
+});
 it("dedupes threshold events and deliveries and retries failures with persistent backoff", async () => {
   const c = deps(
     {

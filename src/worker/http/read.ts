@@ -260,6 +260,9 @@ export async function budgets(deps: Deps) {
     }),
   };
 }
+function oldestSuccess(times: (string | null)[]) {
+  return times.length && times.every(Boolean) ? ([...times].sort()[0] ?? null) : null;
+}
 export async function status(deps: Deps) {
   const db = deps.env.DB;
   const jobs = (
@@ -269,8 +272,14 @@ export async function status(deps: Deps) {
       last_success_at: string | null;
     }>()
   ).results;
+  // One indexed lookup per provider instead of scanning every spend row.
   const stored = (
-    await db.prepare("SELECT DISTINCT provider FROM spend_daily").all<{ provider: string }>()
+    await db
+      .prepare(
+        "SELECT p.value provider FROM json_each(?) p WHERE EXISTS(SELECT 1 FROM spend_daily s WHERE s.provider=p.value)",
+      )
+      .bind(JSON.stringify(PROVIDERS.map((p) => p.id)))
+      .all<{ provider: string }>()
   ).results;
   const names = new Set([
     "DASHBOARD_TOKEN",
@@ -293,13 +302,12 @@ export async function status(deps: Deps) {
       provider: provider.id,
       ...providerConfiguration(deps, provider),
       hasData: stored.some((row) => row.provider === provider.id),
-      lastSuccessAt:
+      // The oldest recurring job, so a failing cost sync isn't hidden by a fresh usage sync.
+      lastSuccessAt: oldestSuccess(
         jobs
-          .filter((job) => job.provider === provider.id && !job.job.endsWith(".entities"))
-          .map((job) => job.last_success_at)
-          .filter((at): at is string => Boolean(at))
-          .sort()
-          .at(-1) ?? null,
+          .filter((job) => job.provider === provider.id && !/\.(entities|backfill)$/.test(job.job))
+          .map((job) => job.last_success_at),
+      ),
     })),
     syntheticDemo: (await getMeta(db, "synthetic_demo")) === "true",
     jobs,
@@ -337,22 +345,24 @@ export async function summary(deps: Deps, p: Params) {
   const mtd = total(month.start.slice(0, 10));
   const states = (
     await deps.env.DB.prepare(
-      "SELECT provider,max(last_success_at) lastSuccessAt FROM sync_state WHERE job LIKE ? OR job LIKE ? GROUP BY provider",
+      "SELECT provider,max(CASE WHEN job LIKE ? OR job LIKE ? THEN last_success_at END) lastSuccessAt,max(CASE WHEN consecutive_failures>0 THEN last_error END) lastError FROM sync_state GROUP BY provider",
     )
       .bind("%.cost_daily", "%.usage_hourly")
-      .all<{ provider: string; lastSuccessAt: string | null }>()
+      .all<{ provider: string; lastSuccessAt: string | null; lastError: string | null }>()
   ).results;
-  const freshness = Object.entries(deps.config.providers)
-    .filter(([, p]) => p.enabled)
-    .map(([provider]) => {
-      const s = states.find((s) => s.provider === provider);
-      return {
-        provider,
-        lastSuccessAt: s?.lastSuccessAt ?? null,
-        lastError: null,
-        stale: !s?.lastSuccessAt || deps.now().getTime() - Date.parse(s.lastSuccessAt) > 45 * 60000,
-      };
-    });
+  // Only providers with a key can sync. Without an hourly usage job, cost runs hourly.
+  const freshness = PROVIDERS.filter(
+    (p) => providerConfiguration(deps, p).status === "configured",
+  ).map((p) => {
+    const s = states.find((s) => s.provider === p.id);
+    const limit = (p.pullUsageHourly ? 45 : 90) * 60000;
+    return {
+      provider: p.id,
+      lastSuccessAt: s?.lastSuccessAt ?? null,
+      lastError: s?.lastError ?? null,
+      stale: !s?.lastSuccessAt || deps.now().getTime() - Date.parse(s.lastSuccessAt) > limit,
+    };
+  });
   const byProvider = ["anthropic", "openai", "openrouter"].map((provider) => {
     const rows = data.rows.filter((r) => r.group === provider && r.day >= month.start.slice(0, 10));
     return {
@@ -393,7 +403,8 @@ export async function summary(deps: Deps, p: Params) {
 }
 export function csvCell(value: unknown) {
   const text = String(value ?? "");
-  const safe = /^[=+\-@\t\r\n]/.test(text) ? `'${text}` : text;
+  // Numbers can't carry a formula; guarding them turned credits into text.
+  const safe = typeof value !== "number" && /^[=+\-@\t\r\n]/.test(text) ? `'${text}` : text;
   return `"${safe.replace(/"/g, '""')}"`;
 }
 export async function exportCsv(deps: Deps, p: Params) {

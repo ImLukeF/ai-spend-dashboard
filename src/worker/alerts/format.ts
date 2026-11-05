@@ -17,7 +17,7 @@ export function formatAlert(event: AlertEvent) {
     : `[Burnrate] ${budget?.name ?? event.type}`;
   const text = budget
     ? `${title} reached ${Number(d.percent ?? 0).toFixed(0)}% — ${money(d.spent)} of ${money(d.limit)} (${d.taxIncluded ? "incl. tax" : "excl. tax"}) · UTC${d.forecast != null ? ` · forecast ${money(d.forecast)}` : ""} · data as of ${String(d.dataAsOf ?? event.timestamp)}`
-    : `${title} · ${String(d.reason ?? "")} · ${event.timestamp}`;
+    : `${title} · ${event.type === "test" ? "Test alert. This channel works." : [d.provider, d.reason ?? d.error].filter(Boolean).join(": ")} · ${event.timestamp}`;
   const escapeHtml = (v: string) =>
     v.replace(
       /[&<>"']/g,

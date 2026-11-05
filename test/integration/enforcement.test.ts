@@ -225,6 +225,26 @@ it("protected targets, stale sync, missing FX and action caps never reach provid
   ).toBeGreaterThan(0);
 });
 
+it("treats a failing cost sync as stale even when usage sync is fresh", async () => {
+  const { c, evaluated } = await setup("live");
+  await env.DB.prepare("UPDATE sync_state SET last_success_at='2026-11-04T00:00:00Z'").run();
+  for (const p of ["anthropic", "openai", "openrouter"])
+    await env.DB.prepare("INSERT INTO sync_state(job,provider,last_success_at) VALUES(?,?,?)")
+      .bind(`${p}.usage_hourly`, p, "2026-11-04T03:15:00Z")
+      .run();
+  let writes = 0;
+  c.fetch = async (_u, init) => {
+    if (init?.method && init.method !== "GET") writes++;
+    return json({ data: [], has_more: false, last_id: null });
+  };
+  await executeEnforcement(c, new BudgetCounter("paid"), evaluated);
+  expect(writes).toBe(0);
+  expect(
+    await env.DB.prepare(
+      "SELECT count(*) n FROM enforcement_actions WHERE reason='stale_data'",
+    ).first("n"),
+  ).toBeGreaterThan(0);
+});
 it("skips every live action when FX is unavailable", async () => {
   const { c, evaluated } = await setup("live");
   for (const e of evaluated) e.result.canEnforce = false;

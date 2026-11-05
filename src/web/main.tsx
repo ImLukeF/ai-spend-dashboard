@@ -1,12 +1,16 @@
 import { Chart, registerables } from "chart.js";
 import { type ComponentChildren, render } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { SpendRow } from "../shared/api-types";
 import { valueAxis } from "./chart";
-import { tagLabels } from "./format";
+import { freshnessState, jobStatus, tagLabels } from "./format";
 import "./style.css";
 
 Chart.register(...registerables);
+// Chart text and grid lines follow the page theme; the library's grey is unreadable in dark mode.
+const theme = getComputedStyle(document.documentElement);
+Chart.defaults.color = theme.getPropertyValue("--muted").trim() || Chart.defaults.color;
+Chart.defaults.borderColor = theme.getPropertyValue("--line").trim() || Chart.defaults.borderColor;
 type Row = Partial<SpendRow> & {
   [key: string]: unknown;
   id?: string;
@@ -117,7 +121,7 @@ const colors = [
   "#d55e00",
   "#56b4e9",
   "#f0e442",
-  "#000000",
+  "#a6761d",
   "#888888",
 ];
 const nav = [
@@ -369,16 +373,19 @@ function App() {
       .catch((e) => {
         setMe(null);
         if (e.status === 401) location.hash = "#/login";
+        else if (e.code === "config_invalid") location.hash = "#/config-invalid";
         else if (e.code === "auth_not_configured" || e.status === 503) location.hash = "#/setup";
         else setError(e.message);
       })
       .finally(() => setLoading(false));
   };
   useEffect(refresh, [currency, tax]);
+  // Shared by the Explore view and its CSV export, so the file matches the screen.
+  const spendQuery = `from=${from}&to=${to}&groupBy=${encodeURIComponent(group)}&currency=${currency}&tax=${tax ? 1 : 0}${filter ? `&provider=${encodeURIComponent(filter)}` : ""}${workspace ? `&workspace=${encodeURIComponent(workspace)}` : ""}${apiKey ? `&apiKey=${encodeURIComponent(apiKey)}` : ""}${model ? `&model=${encodeURIComponent(model)}` : ""}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`;
   useEffect(() => {
     if (!me) return;
     let active = true;
-    const query = `from=${from}&to=${to}&groupBy=${encodeURIComponent(group)}&currency=${currency}&tax=${tax ? 1 : 0}${filter ? `&provider=${encodeURIComponent(filter)}` : ""}${workspace ? `&workspace=${encodeURIComponent(workspace)}` : ""}${apiKey ? `&apiKey=${encodeURIComponent(apiKey)}` : ""}${model ? `&model=${encodeURIComponent(model)}` : ""}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`;
+    const query = spendQuery;
     let calls: Promise<Row>[] = [];
     if (path === "/")
       calls = [
@@ -446,15 +453,7 @@ function App() {
   const result = data.results || [];
   const budgets = rows(path === "/" ? summary.budgets : result[0], "budgets", "items", "data");
   const freshness = rows(summary.freshness);
-  const worstAge = freshness.length
-    ? Math.max(
-        ...freshness.map((r) =>
-          r.lastSuccessAt ? Date.now() - new Date(r.lastSuccessAt).getTime() : Infinity,
-        ),
-      )
-    : Infinity;
-  const freshnessLevel =
-    worstAge <= 45 * 60_000 ? "fresh" : worstAge < 3 * 60 * 60_000 ? "stale" : "old";
+  const freshnessLevel = freshnessState(freshness);
   const currencies = [
     ...new Set(
       [
@@ -490,7 +489,7 @@ function App() {
       setFrom(d.toISOString().slice(0, 10));
     } else if (value !== "custom") setFrom(daysAgo(value === "24h" ? 1 : Number(value) - 1));
   };
-  if (!me && (path === "/login" || path === "/setup" || loading))
+  if (!me && (path === "/login" || path === "/setup" || path === "/config-invalid" || loading))
     return (
       <main class="auth">
         <a class="brand" href="#/">
@@ -498,6 +497,19 @@ function App() {
         </a>
         {loading ? (
           <p>Loading…</p>
+        ) : path === "/config-invalid" ? (
+          <>
+            <p class="eyebrow">Configuration</p>
+            <h1>Fix spend.config.ts</h1>
+            <p>
+              The configuration failed validation, so the dashboard stays closed. Run{" "}
+              <code>npx vitest run test/unit/core.test.ts</code> to see each error (they are also in
+              the Worker logs), fix them and redeploy.
+            </p>
+            <a href="https://github.com/ImLukeF/burnrate/blob/main/docs/configuration.md">
+              Read the configuration reference ↗
+            </a>
+          </>
         ) : path === "/setup" ? (
           <>
             <p class="eyebrow">Getting started</p>
@@ -508,7 +520,10 @@ function App() {
             </p>
             <ol>
               <li>Choose an authentication mode in your configuration.</li>
-              <li>Set the required secrets in your Worker environment.</li>
+              <li>
+                Set a <code>DASHBOARD_TOKEN</code> secret of at least 32 random characters, or the
+                Cloudflare Access secrets.
+              </li>
               <li>Refresh this page after updating the configuration.</li>
             </ol>
             <a href="https://github.com/ImLukeF/burnrate/blob/main/docs/auth.md">
@@ -569,25 +584,27 @@ function App() {
               incl. {config.display?.tax?.label || "tax"}
             </label>
           )}
-          <span
-            class={`fresh ${freshnessLevel}`}
-            title={
-              freshnessLevel === "fresh"
-                ? "All providers synced within 45 minutes"
-                : freshnessLevel === "stale"
-                  ? "Provider data is delayed"
-                  : "Provider data is stale or unavailable"
-            }
-          >
-            <i />{" "}
-            <span>
-              {freshnessLevel === "fresh"
-                ? "Data current"
-                : freshnessLevel === "stale"
-                  ? "Data delayed"
-                  : "Data stale"}
+          {freshnessLevel !== "none" && (
+            <span
+              class={`fresh ${freshnessLevel}`}
+              title={
+                freshnessLevel === "fresh"
+                  ? "All providers are up to date"
+                  : freshnessLevel === "stale"
+                    ? "Provider data is delayed"
+                    : "Provider data is stale or unavailable"
+              }
+            >
+              <i />{" "}
+              <span>
+                {freshnessLevel === "fresh"
+                  ? "Data current"
+                  : freshnessLevel === "stale"
+                    ? "Data delayed"
+                    : "Data stale"}
+              </span>
             </span>
-          </span>
+          )}
           {me?.authMode === "token" && (
             <button
               type="button"
@@ -637,6 +654,15 @@ function App() {
               </div>
               <span class="updated">Updated {date(summary.generatedAt)}</span>
             </div>
+            {summary.generatedAt && !freshness.length && (
+              <div class="banner" role="status">
+                <span>
+                  No provider is syncing yet. Add an admin key as a Worker secret, for example{" "}
+                  <code>npx wrangler secret put OPENAI_ADMIN_KEY</code>, then press Sync now in
+                  Settings.
+                </span>
+              </div>
+            )}
             {rows(summary.warnings).map((w, i) => (
               <div class="banner warning" key={i}>
                 {text(w.message ?? w)}
@@ -817,7 +843,7 @@ function App() {
                   placeholder="dimension:value"
                 />
               </label>
-              <a class="button secondary" href={`${API}/export/spend.csv?from=${from}&to=${to}`}>
+              <a class="button secondary" href={`${API}/export/spend.csv?${spendQuery}`}>
                 Export CSV ↓
               </a>
             </div>
@@ -1087,6 +1113,13 @@ function BudgetDetail({
   money: (n: unknown, unit?: string) => string;
 }) {
   const b = data?.budget || data || {};
+  // The API returns newest first; charts read left to right.
+  const history = useMemo(() => [...rows(data?.history ?? data?.periods)].reverse(), [data]);
+  const percent = typeof b.percent === "number" ? b.percent : null;
+  const hit: number[] =
+    Array.isArray(b.thresholds) && percent !== null
+      ? b.thresholds.filter((t: number) => percent >= t)
+      : [];
   return (
     <>
       <a class="back" href="#/budgets">
@@ -1104,7 +1137,7 @@ function BudgetDetail({
         </div>
         <div>
           <span>Thresholds hit</span>
-          <strong>{text(b.thresholdsHit ?? b.thresholds_hit)}</strong>
+          <strong>{hit.length ? hit.map((t) => `${t}%`).join(", ") : "None"}</strong>
         </div>
         <div>
           <span>Enforcement</span>
@@ -1114,9 +1147,10 @@ function BudgetDetail({
       <section class="section">
         <h2>Period history</h2>
         <ChartView
-          data={data?.history ?? data?.periods}
+          data={history}
           label="Budget period history"
           money={(n) => money(n, b.currency || "USD")}
+          currency={b.currency || "USD"}
         />
       </section>
       <section class="section">
@@ -1337,7 +1371,7 @@ function Settings({
             {jobs.map((r, i) => (
               <tr key={i}>
                 <td>{text(r.job ?? r.name ?? r.provider)}</td>
-                <td>{text(r.enabled === false ? "Disabled" : (r.status ?? "Enabled"))}</td>
+                <td>{jobStatus(r, rows(status, "providers"))}</td>
                 <td>{date(r.lastSuccessAt ?? r.last_success_at)}</td>
                 <td>{text(r.lastError ?? r.last_error)}</td>
                 <td>{text(r.rows ?? r.last_rows)}</td>

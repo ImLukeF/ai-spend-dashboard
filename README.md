@@ -10,6 +10,17 @@ Burnrate is a self-hosted organisation-level AI spend dashboard on Cloudflare Wo
 
 More screenshots: [budgets](docs/screenshots/budgets.png) and [explore](docs/screenshots/explore.png). They use synthetic demo data.
 
+## How it compares
+
+| Approach             | What it sees                                                                    | What you change                       |
+| -------------------- | ------------------------------------------------------------------------------- | ------------------------------------- |
+| Local log readers    | One machine's coding-tool usage                                                 | Nothing, but there's no team view     |
+| Gateways and proxies | Only requests routed through them, priced from their own tables                 | Reroute every call or add an SDK      |
+| Provider consoles    | One provider each, with native caps                                             | Nothing, but there's no combined view |
+| **Burnrate**         | Billed spend across every key, bot and server, from the providers' billing APIs | Add admin keys                        |
+
+Pick a gateway instead when you need per-request traces or a hard cap on every call. Burnrate polls every 15 minutes, so its auto-stop is a backstop, not a guarantee.
+
 ## What v1 includes
 
 - Hourly/daily usage and billed costs, with per-key allocation and gap-only estimates clearly labelled.
@@ -37,11 +48,10 @@ npm ci
 cp .dev.vars.example .dev.vars
 # Set DASHBOARD_TOKEN locally to at least 32 random characters; never commit it.
 # Generate one with: openssl rand -base64 48
-npm run cf-typegen
 npm run dev
 ```
 
-Open `http://127.0.0.1:8787`. All development servers bind to loopback. Without provider keys the application shows empty states. `npm run seed:local` loads **synthetic demo data**, never live account data. It leaves data in local D1; do not use demo data for real budgets. The seed cannot enable budgets or enforcement.
+Open `http://127.0.0.1:8787` and sign in with your `DASHBOARD_TOKEN`. All development servers bind to loopback. Without provider keys the application shows empty states. `npm run seed:local` loads **synthetic demo data**, never live account data. It leaves data in local D1; do not use demo data for real budgets. The seed cannot enable budgets or enforcement.
 
 ```sh
 npm run lint
@@ -63,7 +73,7 @@ Use the button above, or run `npm run deploy` from your reviewed fork after conf
 
 Set secrets using `npx wrangler secret put NAME` or the Worker dashboard. Enter `-` for unused provider secrets in the Deploy UI; blank handling there is UNVERIFIED. Choose [Cloudflare Access](docs/auth.md) where possible, or a random `DASHBOARD_TOKEN` of at least 32 characters. Authentication fails closed with 503 until configured. Keep provider credentials only in Worker secrets or ignored `.dev.vars`.
 
-Create provider admin/management keys using the [Anthropic Admin guide](https://platform.claude.com/docs/en/manage-claude/admin-api), [OpenAI Admin guide](https://developers.openai.com/api/docs/guides/admin-apis), and [OpenRouter management-key guide](https://openrouter.ai/docs/guides/overview/auth/management-api-keys). Anthropic individual accounts cannot use the Admin API. OpenAI usage needs `api.usage.read`. An OpenRouter read-only management key works for reporting; workspace-scoped keys cannot read organisation analytics.
+Create provider admin/management keys using the [Anthropic Admin guide](https://platform.claude.com/docs/en/manage-claude/admin-api), [OpenAI Admin guide](https://developers.openai.com/api/docs/guides/admin-apis), and [OpenRouter management-key guide](https://openrouter.ai/docs/guides/overview/auth/management-api-keys). Anthropic individual accounts cannot use the Admin API. OpenAI usage needs `api.usage.read`. An OpenRouter read-only management key works for reporting; workspace-scoped keys cannot read organisation analytics. OpenRouter is off by default: also set `providers.openrouter.enabled: true` in `spend.config.ts`.
 
 See [deployment](docs/deploy.md) for Access setup, custom domains and upgrades.
 

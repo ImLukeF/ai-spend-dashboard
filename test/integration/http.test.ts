@@ -7,6 +7,8 @@ import {
 } from "../../src/shared/api-types";
 import { createApp } from "../../src/worker/http/app";
 import { createSession } from "../../src/worker/http/auth";
+import { csvCell } from "../../src/worker/http/read";
+import { hash } from "../../src/worker/lib/hash";
 import { deps, NOW, resetDb } from "../helpers";
 
 const token = "test-dashboard-token-0123456789abcdef0123";
@@ -195,6 +197,10 @@ it("groups populated spend by every dimension, filters tags, and escapes CSV for
   expect(csv).toContain("'=HYPERLINK()");
   expect(csv.split("\r\n")[0]).toContain("team");
 });
+it("keeps negative amounts numeric in CSV but guards formula-like text", () => {
+  expect(csvCell(-1.25)).toBe('"-1.25"');
+  expect(csvCell("-1.25")).toBe(`"'-1.25"`);
+});
 
 it("labels keys name first, keeps full key IDs and separates keys with matching names", async () => {
   const c = deps({}, { DASHBOARD_TOKEN: token });
@@ -293,6 +299,22 @@ it("distinguishes seeded spend, entity discovery, and a successful data sync", a
   expect(second.providers.find((p) => p.provider === "openrouter")?.lastSuccessAt).toBe(
     NOW.toISOString(),
   );
+  const old = new Date(NOW.getTime() - 3 * 3600000).toISOString();
+  await c.env.DB.batch(
+    [
+      ["anthropic.cost_daily", old],
+      ["anthropic.usage_hourly", NOW.toISOString()],
+      ["anthropic.backfill", NOW.toISOString()],
+    ].map(([job, at]) =>
+      c.env.DB.prepare(
+        "INSERT INTO sync_state(job,provider,last_success_at) VALUES(?,'anthropic',?)",
+      ).bind(job, at),
+    ),
+  );
+  const third = await (await app.request("https://example.com/api/v1/status", { headers })).json<{
+    providers: { provider: string; lastSuccessAt: string | null }[];
+  }>();
+  expect(third.providers.find((p) => p.provider === "anthropic")?.lastSuccessAt).toBe(old);
 });
 
 it("projects MTD dollars once across billed, allocated and estimated daily spend", async () => {
@@ -316,4 +338,53 @@ it("projects MTD dollars once across billed, allocated and estimated daily spend
   expect(totals.today).toBeCloseTo(13.8);
   expect(totals.monthToDate).toBeCloseTo(58.26);
   expect(totals.monthForecast).toBeCloseTo(557.4378737542, 8);
+});
+
+it("reports freshness only for providers with keys and shows their sync errors", async () => {
+  const c = deps(
+    { providers: { openrouter: { enabled: true } } },
+    { DASHBOARD_TOKEN: token, OPENAI_ADMIN_KEY: "test-key", OPENROUTER_MANAGEMENT_KEY: "test-key" },
+  );
+  const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60000).toISOString();
+  await c.env.DB.batch(
+    [
+      ["openai.cost_daily", "openai", ago(10), 0, null],
+      ["openai.usage_hourly", "openai", ago(20), 2, "HTTP 500"],
+      ["openrouter.cost_daily", "openrouter", ago(50), 0, null],
+    ].map((row) =>
+      c.env.DB.prepare(
+        "INSERT INTO sync_state(job,provider,last_success_at,consecutive_failures,last_error) VALUES(?,?,?,?,?)",
+      ).bind(...row),
+    ),
+  );
+  const response = await createApp(c).request("https://example.com/api/v1/summary", {
+    headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
+  });
+  const { freshness, warnings } = SummaryResponseSchema.parse(await response.json());
+  expect(freshness).toEqual([
+    { provider: "openai", lastSuccessAt: ago(10), lastError: "HTTP 500", stale: false },
+    { provider: "openrouter", lastSuccessAt: ago(50), lastError: null, stale: false },
+  ]);
+  expect(warnings.join(" ")).not.toContain("anthropic");
+});
+
+it("keys the failed-login client hash so addresses can't be brute-forced", async () => {
+  const c = deps(config, { DASHBOARD_TOKEN: token });
+  await createApp(c).request("https://example.com/api/v1/session", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-asd-csrf": "1",
+      "cf-connecting-ip": "192.0.2.1",
+    },
+    body: JSON.stringify({ token: "wrong" }),
+  });
+  const detail = await c.env.DB.prepare(
+    "SELECT detail FROM audit_log WHERE action='login_failed'",
+  ).first<string>("detail");
+  const { clientHash } = JSON.parse(detail ?? "{}") as { clientHash: string };
+  expect(clientHash).toHaveLength(16);
+  expect(clientHash).not.toBe(
+    (await hash(`192.0.2.1${NOW.toISOString().slice(0, 10)}`)).slice(0, 16),
+  );
 });

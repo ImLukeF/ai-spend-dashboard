@@ -1,7 +1,8 @@
 export function valueAxis(currency?: string) {
   const format = new Intl.NumberFormat(
     undefined,
-    currency ? { style: "currency", currency } : undefined,
+    // Up to four decimals so small-spend axes don't read $0.00, $0.01, $0.01.
+    currency ? { style: "currency", currency, maximumFractionDigits: 4 } : undefined,
   );
   return {
     stacked: true,
