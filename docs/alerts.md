@@ -41,6 +41,8 @@ function verify(headers, rawBody, secret, nowSeconds) {
 
 Create a Slack incoming webhook and save its URL as a secret. Messages use the plain-text summary; no SDK or external UI assets are loaded.
 
+The Slack channel also works for Discord and Mattermost, because it posts a plain `{"text": ...}` body. For Discord, save the channel's webhook URL with `/slack` added to the end. Mattermost incoming webhooks accept it as is. Send a test alert from Settings to confirm.
+
 Use a private/authenticated ntfy topic where possible: public topic URLs act like passwords. Put the entire URL in the secret, and optionally supply a bearer-token secret. Messages have bounded UTF-8 text, a title of at most 100 characters, priority 3 for warnings, 4 for exceeded/forecast, and 5 for applied/failed enforcement. ntfy.sh currently documents a 250-message/day limit; self-hosted policies differ. [ntfy publish docs](https://docs.ntfy.sh/publish/).
 
 Resend uses its fixed send-email API and `Idempotency-Key: <event>-<channel>`. Set sender/recipient values as secrets, including comma-separated recipients. HTML is escaped; text is included too. Cloudflare's optional `send_email` binding named `EMAIL` uses the installed runtime's message-builder send overload. Email Service is beta; full sending needs Workers Paid and verified-destination sending is the limited Free alternative. Check availability in your account before choosing this transport.
