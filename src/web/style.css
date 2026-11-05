@@ -617,7 +617,7 @@ footer {
     max-width: 100%;
   }
   .header nav {
-    gap: 20px;
+    column-gap: 16px;
   }
   .header nav a {
     font-size: 12px;
