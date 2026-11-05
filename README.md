@@ -10,6 +10,17 @@ Burnrate is a self-hosted organisation-level AI spend dashboard on Cloudflare Wo
 
 More screenshots: [budgets](docs/screenshots/budgets.png) and [explore](docs/screenshots/explore.png). They use synthetic demo data.
 
+## How it compares
+
+| Approach             | What it sees                                                                    | What you change                       |
+| -------------------- | ------------------------------------------------------------------------------- | ------------------------------------- |
+| Local log readers    | One machine's coding-tool usage                                                 | Nothing, but there's no team view     |
+| Gateways and proxies | Only requests routed through them, priced from their own tables                 | Reroute every call or add an SDK      |
+| Provider consoles    | One provider each, with native caps                                             | Nothing, but there's no combined view |
+| **Burnrate**         | Billed spend across every key, bot and server, from the providers' billing APIs | Add admin keys                        |
+
+Pick a gateway instead when you need per-request traces or a hard cap on every call. Burnrate polls every 15 minutes, so its auto-stop is a backstop, not a guarantee.
+
 ## What v1 includes
 
 - Hourly/daily usage and billed costs, with per-key allocation and gap-only estimates clearly labelled.
