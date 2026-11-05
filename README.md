@@ -63,7 +63,7 @@ See [deployment](docs/deploy.md) for Access setup, custom domains and upgrades.
 
 ## Configure behaviour in code
 
-Edit `spend.config.ts` in your fork and redeploy. The browser cannot edit configuration or provider keys. Defaults enable Anthropic and OpenAI only when their secrets exist, use USD and contain no budgets or channels.
+Edit `spend.config.ts` in your fork and redeploy. The browser cannot edit configuration or provider keys. Defaults enable Anthropic and OpenAI only when their secrets exist, use USD with EUR, GBP, AUD, CAD, JPY and INR in the currency picker, and contain no budgets or channels.
 
 ```ts
 import { defineConfig } from "./src/shared/config-schema";
