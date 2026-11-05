@@ -395,7 +395,8 @@ export async function summary(deps: Deps, p: Params) {
 }
 export function csvCell(value: unknown) {
   const text = String(value ?? "");
-  const safe = /^[=+\-@\t\r\n]/.test(text) ? `'${text}` : text;
+  // Numbers can't carry a formula; guarding them turned credits into text.
+  const safe = typeof value !== "number" && /^[=+\-@\t\r\n]/.test(text) ? `'${text}` : text;
   return `"${safe.replace(/"/g, '""')}"`;
 }
 export async function exportCsv(deps: Deps, p: Params) {

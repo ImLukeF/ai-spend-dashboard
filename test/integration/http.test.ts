@@ -6,6 +6,7 @@ import {
   UsageResponseSchema,
 } from "../../src/shared/api-types";
 import { createApp } from "../../src/worker/http/app";
+import { csvCell } from "../../src/worker/http/read";
 import { createSession } from "../../src/worker/http/auth";
 import { deps, NOW, resetDb } from "../helpers";
 
@@ -194,6 +195,10 @@ it("groups populated spend by every dimension, filters tags, and escapes CSV for
   ).text();
   expect(csv).toContain("'=HYPERLINK()");
   expect(csv.split("\r\n")[0]).toContain("team");
+});
+it("keeps negative amounts numeric in CSV but guards formula-like text", () => {
+  expect(csvCell(-1.25)).toBe('"-1.25"');
+  expect(csvCell("-1.25")).toBe(`"'-1.25"`);
 });
 
 it("labels keys name first, keeps full key IDs and separates keys with matching names", async () => {
