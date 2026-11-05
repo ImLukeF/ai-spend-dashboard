@@ -1,0 +1,13 @@
+name: Bug report
+description: Describe observed and expected behaviour, version, redacted status and a synthetic reproduction.
+body:
+  - type: markdown
+    attributes:
+      value: Never include secrets, real account IDs, private names or raw provider responses. Report vulnerabilities privately through GitHub Security Advisories.
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Describe observed and expected behaviour, version, redacted status and a synthetic reproduction.
+    validations:
+      required: true

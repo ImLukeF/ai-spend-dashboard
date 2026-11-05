@@ -1,0 +1,8 @@
+{
+  "type": "error",
+  "error": {
+    "type": "test_error",
+    "message": "Synthetic error"
+  },
+  "retry_after": null
+}

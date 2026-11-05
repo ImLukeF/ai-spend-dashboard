@@ -1,0 +1,13 @@
+name: Feature request
+description: Describe the use case, current limitation and proposed behaviour.
+body:
+  - type: markdown
+    attributes:
+      value: Never include secrets, real account IDs, private names or raw provider responses. Report vulnerabilities privately through GitHub Security Advisories.
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Describe the use case, current limitation and proposed behaviour.
+    validations:
+      required: true

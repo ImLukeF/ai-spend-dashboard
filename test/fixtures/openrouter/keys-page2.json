@@ -1,0 +1,15 @@
+{
+  "data": [
+    {
+      "hash": "example0hash02",
+      "name": "Example agent",
+      "label": "Example agent label",
+      "disabled": true,
+      "workspace_id": "workspace_example",
+      "limit": null,
+      "limit_reset": null,
+      "usage_daily": 0,
+      "usage": 3
+    }
+  ]
+}

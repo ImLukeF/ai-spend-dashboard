@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "burnrate",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist/web",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [{ "binding": "DB", "database_name": "burnrate" }],
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "dev": { "ip": "127.0.0.1", "port": 8787 }
+}

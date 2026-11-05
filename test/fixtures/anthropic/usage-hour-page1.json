@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "starting_at": "2026-11-03T00:00:00Z",
+      "ending_at": "2026-11-04T00:00:00Z",
+      "results": [
+        {
+          "uncached_input_tokens": 1500,
+          "cache_read_input_tokens": 200,
+          "output_tokens": 500,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 100,
+            "ephemeral_1h_input_tokens": 50
+          },
+          "server_tool_use": {
+            "web_search_requests": 10
+          },
+          "api_key_id": "apikey_EXAMPLE01",
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard"
+        },
+        {
+          "uncached_input_tokens": 1500,
+          "cache_read_input_tokens": 200,
+          "output_tokens": 500,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 100,
+            "ephemeral_1h_input_tokens": 50
+          },
+          "server_tool_use": {
+            "web_search_requests": 10
+          },
+          "api_key_id": "apikey_EXAMPLE02",
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard"
+        }
+      ]
+    }
+  ],
+  "has_more": true,
+  "next_page": "page_example2"
+}

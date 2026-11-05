@@ -1,0 +1,92 @@
+{
+  "data": [
+    {
+      "starting_at": "2026-11-03T00:00:00Z",
+      "ending_at": "2026-11-04T00:00:00Z",
+      "results": [
+        {
+          "amount": "123.78912",
+          "currency": "USD",
+          "cost_type": "tokens",
+          "token_type": "uncached_input_tokens",
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "uncached_input_tokens"
+        },
+        {
+          "amount": "123.78912",
+          "currency": "USD",
+          "cost_type": "tokens",
+          "token_type": "cache_read_input_tokens",
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "cache_read_input_tokens"
+        },
+        {
+          "amount": "123.78912",
+          "currency": "USD",
+          "cost_type": "tokens",
+          "token_type": "cache_creation.ephemeral_5m_input_tokens",
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "cache_creation.ephemeral_5m_input_tokens"
+        },
+        {
+          "amount": "123.78912",
+          "currency": "USD",
+          "cost_type": "tokens",
+          "token_type": "cache_creation.ephemeral_1h_input_tokens",
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "cache_creation.ephemeral_1h_input_tokens"
+        },
+        {
+          "amount": "123.78912",
+          "currency": "USD",
+          "cost_type": "tokens",
+          "token_type": "output_tokens",
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "output_tokens"
+        },
+        {
+          "amount": "10",
+          "currency": "USD",
+          "cost_type": "web_search",
+          "token_type": null,
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "web_search"
+        },
+        {
+          "amount": "10",
+          "currency": "USD",
+          "cost_type": "code_execution",
+          "token_type": null,
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "code_execution"
+        },
+        {
+          "amount": "10",
+          "currency": "USD",
+          "cost_type": "session_usage",
+          "token_type": null,
+          "workspace_id": "wrkspc_EXAMPLE01",
+          "model": "claude-example-1",
+          "service_tier": "standard",
+          "description": "session_usage"
+        }
+      ]
+    }
+  ],
+  "has_more": false,
+  "next_page": null
+}

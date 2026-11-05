@@ -1,0 +1,13 @@
+name: Provider request
+description: Link official usage/cost documentation, required permissions, response units, paging and reversible controls.
+body:
+  - type: markdown
+    attributes:
+      value: Never include secrets, real account IDs, private names or raw provider responses. Report vulnerabilities privately through GitHub Security Advisories.
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Link official usage/cost documentation, required permissions, response units, paging and reversible controls.
+    validations:
+      required: true

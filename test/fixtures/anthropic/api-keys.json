@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": "apikey_EXAMPLE01",
+      "name": "support-one",
+      "status": "active",
+      "workspace_id": "wrkspc_EXAMPLE01",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "apikey_EXAMPLE02",
+      "name": "support-two",
+      "status": "active",
+      "scope": {
+        "workspace_id": "wrkspc_EXAMPLE01"
+      },
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "has_more": false,
+  "last_id": "apikey_EXAMPLE02"
+}
