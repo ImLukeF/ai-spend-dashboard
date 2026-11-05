@@ -317,3 +317,31 @@ it("projects MTD dollars once across billed, allocated and estimated daily spend
   expect(totals.monthToDate).toBeCloseTo(58.26);
   expect(totals.monthForecast).toBeCloseTo(557.4378737542, 8);
 });
+
+it("reports freshness only for providers with keys and shows their sync errors", async () => {
+  const c = deps(
+    { providers: { openrouter: { enabled: true } } },
+    { DASHBOARD_TOKEN: token, OPENAI_ADMIN_KEY: "test-key", OPENROUTER_MANAGEMENT_KEY: "test-key" },
+  );
+  const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60000).toISOString();
+  await c.env.DB.batch(
+    [
+      ["openai.cost_daily", "openai", ago(10), 0, null],
+      ["openai.usage_hourly", "openai", ago(20), 2, "HTTP 500"],
+      ["openrouter.cost_daily", "openrouter", ago(50), 0, null],
+    ].map((row) =>
+      c.env.DB.prepare(
+        "INSERT INTO sync_state(job,provider,last_success_at,consecutive_failures,last_error) VALUES(?,?,?,?,?)",
+      ).bind(...row),
+    ),
+  );
+  const response = await createApp(c).request("https://example.com/api/v1/summary", {
+    headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
+  });
+  const { freshness, warnings } = SummaryResponseSchema.parse(await response.json());
+  expect(freshness).toEqual([
+    { provider: "openai", lastSuccessAt: ago(10), lastError: "HTTP 500", stale: false },
+    { provider: "openrouter", lastSuccessAt: ago(50), lastError: null, stale: false },
+  ]);
+  expect(warnings.join(" ")).not.toContain("anthropic");
+});

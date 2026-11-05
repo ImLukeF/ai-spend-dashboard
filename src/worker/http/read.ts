@@ -337,22 +337,24 @@ export async function summary(deps: Deps, p: Params) {
   const mtd = total(month.start.slice(0, 10));
   const states = (
     await deps.env.DB.prepare(
-      "SELECT provider,max(last_success_at) lastSuccessAt FROM sync_state WHERE job LIKE ? OR job LIKE ? GROUP BY provider",
+      "SELECT provider,max(CASE WHEN job LIKE ? OR job LIKE ? THEN last_success_at END) lastSuccessAt,max(CASE WHEN consecutive_failures>0 THEN last_error END) lastError FROM sync_state GROUP BY provider",
     )
       .bind("%.cost_daily", "%.usage_hourly")
-      .all<{ provider: string; lastSuccessAt: string | null }>()
+      .all<{ provider: string; lastSuccessAt: string | null; lastError: string | null }>()
   ).results;
-  const freshness = Object.entries(deps.config.providers)
-    .filter(([, p]) => p.enabled)
-    .map(([provider]) => {
-      const s = states.find((s) => s.provider === provider);
-      return {
-        provider,
-        lastSuccessAt: s?.lastSuccessAt ?? null,
-        lastError: null,
-        stale: !s?.lastSuccessAt || deps.now().getTime() - Date.parse(s.lastSuccessAt) > 45 * 60000,
-      };
-    });
+  // Only providers with a key can sync. Without an hourly usage job, cost runs hourly.
+  const freshness = PROVIDERS.filter(
+    (p) => providerConfiguration(deps, p).status === "configured",
+  ).map((p) => {
+    const s = states.find((s) => s.provider === p.id);
+    const limit = (p.pullUsageHourly ? 45 : 90) * 60000;
+    return {
+      provider: p.id,
+      lastSuccessAt: s?.lastSuccessAt ?? null,
+      lastError: s?.lastError ?? null,
+      stale: !s?.lastSuccessAt || deps.now().getTime() - Date.parse(s.lastSuccessAt) > limit,
+    };
+  });
   const byProvider = ["anthropic", "openai", "openrouter"].map((provider) => {
     const rows = data.rows.filter((r) => r.group === provider && r.day >= month.start.slice(0, 10));
     return {
