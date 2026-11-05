@@ -272,8 +272,14 @@ export async function status(deps: Deps) {
       last_success_at: string | null;
     }>()
   ).results;
+  // One indexed lookup per provider instead of scanning every spend row.
   const stored = (
-    await db.prepare("SELECT DISTINCT provider FROM spend_daily").all<{ provider: string }>()
+    await db
+      .prepare(
+        "SELECT p.value provider FROM json_each(?) p WHERE EXISTS(SELECT 1 FROM spend_daily s WHERE s.provider=p.value)",
+      )
+      .bind(JSON.stringify(PROVIDERS.map((p) => p.id)))
+      .all<{ provider: string }>()
   ).results;
   const names = new Set([
     "DASHBOARD_TOKEN",
