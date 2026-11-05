@@ -196,7 +196,7 @@ it("groups populated spend by every dimension, filters tags, and escapes CSV for
   expect(csv.split("\r\n")[0]).toContain("team");
 });
 
-it("keeps full key IDs and separates keys with matching names and suffixes", async () => {
+it("labels keys name first, keeps full key IDs and separates keys with matching names", async () => {
   const c = deps({}, { DASHBOARD_TOKEN: token });
   const ids = ["key_example_first_12345678", "key_example_second_12345678"];
   for (const id of ids) {
@@ -209,14 +209,20 @@ it("keeps full key IDs and separates keys with matching names and suffixes", asy
       ).bind(id, NOW.toISOString()),
     ]);
   }
+  await c.env.DB.prepare(
+    "INSERT INTO spend_daily VALUES('openai','2026-11-03','workspace_example','','model-example','billed',1000000,0,?)",
+  )
+    .bind(NOW.toISOString())
+    .run();
   const response = await createApp(c).request("https://example.com/api/v1/spend?groupBy=api_key", {
     headers: { cookie: `asd_session=${await createSession(token, NOW)}` },
   });
   const data = SpendResponseSchema.parse(await response.json());
-  expect(data.rows.map((r) => r.group).sort()).toEqual(
-    ids.map((id) => `${id} · Synthetic bot · openai`),
-  );
-  expect(data.rows.map((r) => r.amount)).toEqual([1, 1]);
+  expect(data.rows.map((r) => r.group).sort()).toEqual([
+    "No key (Console) · openai",
+    ...ids.map((id) => `Synthetic bot · openai · ${id}`),
+  ]);
+  expect(data.rows.map((r) => r.amount)).toEqual([1, 1, 1]);
 });
 
 it.each([

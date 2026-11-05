@@ -89,7 +89,7 @@ function grouping(group: string) {
   if (group === "workspace")
     return "COALESCE((SELECT e.name FROM entities e WHERE e.provider=s.provider AND e.kind='workspace' AND e.id=s.workspace_id),NULLIF(s.workspace_id,''),'Default workspace') || ' · ' || s.provider || ' · ' || substr(s.workspace_id,-8)";
   if (group === "api_key")
-    return "COALESCE(NULLIF(s.api_key_id,''),'No key (Console)') || ' · ' || COALESCE((SELECT e.name FROM entities e WHERE e.provider=s.provider AND e.kind='api_key' AND e.id=s.api_key_id),'Unnamed key') || ' · ' || s.provider";
+    return "CASE WHEN COALESCE(s.api_key_id,'')='' THEN 'No key (Console) · ' || s.provider ELSE COALESCE((SELECT e.name FROM entities e WHERE e.provider=s.provider AND e.kind='api_key' AND e.id=s.api_key_id),'Unnamed key') || ' · ' || s.provider || ' · ' || s.api_key_id END";
   return "COALESCE((SELECT value FROM entity_tags t WHERE t.provider=s.provider AND t.workspace_id=s.workspace_id AND t.api_key_id=s.api_key_id AND t.dimension=?),'(untagged)')";
 }
 export async function spend(deps: Deps, p: Params) {
