@@ -1,6 +1,6 @@
 import { Chart, registerables } from "chart.js";
 import { type ComponentChildren, render } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { SpendRow } from "../shared/api-types";
 import { valueAxis } from "./chart";
 import { jobStatus, tagLabels } from "./format";
@@ -1106,6 +1106,13 @@ function BudgetDetail({
   money: (n: unknown, unit?: string) => string;
 }) {
   const b = data?.budget || data || {};
+  // The API returns newest first; charts read left to right.
+  const history = useMemo(() => [...rows(data?.history ?? data?.periods)].reverse(), [data]);
+  const percent = typeof b.percent === "number" ? b.percent : null;
+  const hit: number[] =
+    Array.isArray(b.thresholds) && percent !== null
+      ? b.thresholds.filter((t: number) => percent >= t)
+      : [];
   return (
     <>
       <a class="back" href="#/budgets">
@@ -1123,7 +1130,7 @@ function BudgetDetail({
         </div>
         <div>
           <span>Thresholds hit</span>
-          <strong>{text(b.thresholdsHit ?? b.thresholds_hit)}</strong>
+          <strong>{hit.length ? hit.map((t) => `${t}%`).join(", ") : "None"}</strong>
         </div>
         <div>
           <span>Enforcement</span>
@@ -1133,9 +1140,10 @@ function BudgetDetail({
       <section class="section">
         <h2>Period history</h2>
         <ChartView
-          data={data?.history ?? data?.periods}
+          data={history}
           label="Budget period history"
           money={(n) => money(n, b.currency || "USD")}
+          currency={b.currency || "USD"}
         />
       </section>
       <section class="section">
