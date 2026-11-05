@@ -73,6 +73,7 @@ it.each([
   { channels: [{ id: "Bad", type: "slack", webhookUrlSecret: "SECRET_URL" }] },
   { budgets: [{ id: "b", name: "b", period: "day", amount: 1, thresholds: [80, 50] }] },
   { budgets: [{ id: "b", name: "b", period: "day", amount: 1, channels: ["missing"] }] },
+  { budgets: [{ id: "b", name: "b", period: "day", amount: 1, scope: { tags: { teem: ["x"] } } }] },
   {
     tags: [
       { dimension: "agent", rules: [] },

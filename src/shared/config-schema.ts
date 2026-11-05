@@ -183,6 +183,13 @@ export const ConfigSchema = z
           path: ["budgets", i, "thresholds"],
           message: "Thresholds must be sorted and unique",
         });
+      for (const dimension of Object.keys(b.scope.tags))
+        if (!c.tags.some((t) => t.dimension === dimension))
+          ctx.addIssue({
+            code: "custom",
+            path: ["budgets", i, "scope", "tags", dimension],
+            message: "Unknown tag dimension",
+          });
       for (const ch of b.channels)
         if (!c.channels.some((x) => x.id === ch))
           ctx.addIssue({
