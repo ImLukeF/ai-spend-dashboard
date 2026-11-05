@@ -7,6 +7,10 @@ import { jobStatus, tagLabels } from "./format";
 import "./style.css";
 
 Chart.register(...registerables);
+// Chart text and grid lines follow the page theme; the library's grey is unreadable in dark mode.
+const theme = getComputedStyle(document.documentElement);
+Chart.defaults.color = theme.getPropertyValue("--muted").trim() || Chart.defaults.color;
+Chart.defaults.borderColor = theme.getPropertyValue("--line").trim() || Chart.defaults.borderColor;
 type Row = Partial<SpendRow> & {
   [key: string]: unknown;
   id?: string;
@@ -117,7 +121,7 @@ const colors = [
   "#d55e00",
   "#56b4e9",
   "#f0e442",
-  "#000000",
+  "#a6761d",
   "#888888",
 ];
 const nav = [
