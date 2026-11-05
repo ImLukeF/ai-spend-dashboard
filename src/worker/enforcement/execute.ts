@@ -194,7 +194,8 @@ export async function executeEnforcement(
           )
           .first<{ last_seen_at: string; status: string }>();
         const sync = await deps.env.DB.prepare(
-          "SELECT max(last_success_at) success FROM sync_state WHERE provider=? AND (job LIKE '%.cost_daily' OR job LIKE '%.usage_daily' OR job LIKE '%.usage_hourly')",
+          // The oldest job decides: one failing sync must block live actions.
+          "SELECT CASE WHEN count(*)=count(last_success_at) THEN min(last_success_at) END success FROM sync_state WHERE provider=? AND (job LIKE '%.cost_daily' OR job LIKE '%.usage_daily' OR job LIKE '%.usage_hourly')",
         )
           .bind(p)
           .first<string>("success");
