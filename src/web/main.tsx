@@ -376,10 +376,12 @@ function App() {
       .finally(() => setLoading(false));
   };
   useEffect(refresh, [currency, tax]);
+  // Shared by the Explore view and its CSV export, so the file matches the screen.
+  const spendQuery = `from=${from}&to=${to}&groupBy=${encodeURIComponent(group)}&currency=${currency}&tax=${tax ? 1 : 0}${filter ? `&provider=${encodeURIComponent(filter)}` : ""}${workspace ? `&workspace=${encodeURIComponent(workspace)}` : ""}${apiKey ? `&apiKey=${encodeURIComponent(apiKey)}` : ""}${model ? `&model=${encodeURIComponent(model)}` : ""}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`;
   useEffect(() => {
     if (!me) return;
     let active = true;
-    const query = `from=${from}&to=${to}&groupBy=${encodeURIComponent(group)}&currency=${currency}&tax=${tax ? 1 : 0}${filter ? `&provider=${encodeURIComponent(filter)}` : ""}${workspace ? `&workspace=${encodeURIComponent(workspace)}` : ""}${apiKey ? `&apiKey=${encodeURIComponent(apiKey)}` : ""}${model ? `&model=${encodeURIComponent(model)}` : ""}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`;
+    const query = spendQuery;
     let calls: Promise<Row>[] = [];
     if (path === "/")
       calls = [
@@ -834,7 +836,7 @@ function App() {
                   placeholder="dimension:value"
                 />
               </label>
-              <a class="button secondary" href={`${API}/export/spend.csv?from=${from}&to=${to}`}>
+              <a class="button secondary" href={`${API}/export/spend.csv?${spendQuery}`}>
                 Export CSV ↓
               </a>
             </div>
