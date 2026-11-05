@@ -38,4 +38,12 @@ curl --fail-with-body --silent \
   'https://spend.example.com/api/v1/budgets'
 ```
 
+For a status bar (tmux, SwiftBar or a shell prompt), print month-to-date spend from the summary:
+
+```sh
+curl --fail --silent -H "Authorization: Bearer $READ_API_TOKEN" \
+  'https://spend.example.com/api/v1/summary' |
+  jq -r '"\(.currency) \(.totals.monthToDate * 100 | round / 100)"'
+```
+
 This token can GET only summary/spend/budgets; all other endpoints return 403. MCP and local collector ingest are deferred, not present in v1.
