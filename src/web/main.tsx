@@ -654,6 +654,15 @@ function App() {
               </div>
               <span class="updated">Updated {date(summary.generatedAt)}</span>
             </div>
+            {summary.generatedAt && !freshness.length && (
+              <div class="banner" role="status">
+                <span>
+                  No provider is syncing yet. Add an admin key as a Worker secret, for example{" "}
+                  <code>npx wrangler secret put OPENAI_ADMIN_KEY</code>, then press Sync now in
+                  Settings.
+                </span>
+              </div>
+            )}
             {rows(summary.warnings).map((w, i) => (
               <div class="banner warning" key={i}>
                 {text(w.message ?? w)}
