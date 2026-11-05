@@ -51,7 +51,7 @@
         "description": "[Create an OpenAI admin key](https://developers.openai.com/api/docs/guides/admin-apis). Enter `-` if unused."
       },
       "OPENROUTER_MANAGEMENT_KEY": {
-        "description": "[Create an OpenRouter management key](https://openrouter.ai/docs/guides/overview/auth/management-api-keys). Enter `-` if unused."
+        "description": "[Create an OpenRouter management key](https://openrouter.ai/docs/guides/overview/auth/management-api-keys), then set providers.openrouter.enabled in spend.config.ts. Enter `-` if unused."
       },
       "ENFORCEMENT_MODE": {
         "description": "Use dry_run initially. off disables actions; live requires explicit config targets. Enter `-` for dry_run."

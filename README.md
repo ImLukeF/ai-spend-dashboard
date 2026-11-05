@@ -37,11 +37,10 @@ npm ci
 cp .dev.vars.example .dev.vars
 # Set DASHBOARD_TOKEN locally to at least 32 random characters; never commit it.
 # Generate one with: openssl rand -base64 48
-npm run cf-typegen
 npm run dev
 ```
 
-Open `http://127.0.0.1:8787`. All development servers bind to loopback. Without provider keys the application shows empty states. `npm run seed:local` loads **synthetic demo data**, never live account data. It leaves data in local D1; do not use demo data for real budgets. The seed cannot enable budgets or enforcement.
+Open `http://127.0.0.1:8787` and sign in with your `DASHBOARD_TOKEN`. All development servers bind to loopback. Without provider keys the application shows empty states. `npm run seed:local` loads **synthetic demo data**, never live account data. It leaves data in local D1; do not use demo data for real budgets. The seed cannot enable budgets or enforcement.
 
 ```sh
 npm run lint
@@ -63,7 +62,7 @@ Use the button above, or run `npm run deploy` from your reviewed fork after conf
 
 Set secrets using `npx wrangler secret put NAME` or the Worker dashboard. Enter `-` for unused provider secrets in the Deploy UI; blank handling there is UNVERIFIED. Choose [Cloudflare Access](docs/auth.md) where possible, or a random `DASHBOARD_TOKEN` of at least 32 characters. Authentication fails closed with 503 until configured. Keep provider credentials only in Worker secrets or ignored `.dev.vars`.
 
-Create provider admin/management keys using the [Anthropic Admin guide](https://platform.claude.com/docs/en/manage-claude/admin-api), [OpenAI Admin guide](https://developers.openai.com/api/docs/guides/admin-apis), and [OpenRouter management-key guide](https://openrouter.ai/docs/guides/overview/auth/management-api-keys). Anthropic individual accounts cannot use the Admin API. OpenAI usage needs `api.usage.read`. An OpenRouter read-only management key works for reporting; workspace-scoped keys cannot read organisation analytics.
+Create provider admin/management keys using the [Anthropic Admin guide](https://platform.claude.com/docs/en/manage-claude/admin-api), [OpenAI Admin guide](https://developers.openai.com/api/docs/guides/admin-apis), and [OpenRouter management-key guide](https://openrouter.ai/docs/guides/overview/auth/management-api-keys). Anthropic individual accounts cannot use the Admin API. OpenAI usage needs `api.usage.read`. An OpenRouter read-only management key works for reporting; workspace-scoped keys cannot read organisation analytics. OpenRouter is off by default: also set `providers.openrouter.enabled: true` in `spend.config.ts`.
 
 See [deployment](docs/deploy.md) for Access setup, custom domains and upgrades.
 
