@@ -3,7 +3,7 @@ import { type ComponentChildren, render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { SpendRow } from "../shared/api-types";
 import { valueAxis } from "./chart";
-import { jobStatus, tagLabels } from "./format";
+import { freshnessState, jobStatus, tagLabels } from "./format";
 import "./style.css";
 
 Chart.register(...registerables);
@@ -453,15 +453,7 @@ function App() {
   const result = data.results || [];
   const budgets = rows(path === "/" ? summary.budgets : result[0], "budgets", "items", "data");
   const freshness = rows(summary.freshness);
-  const worstAge = freshness.length
-    ? Math.max(
-        ...freshness.map((r) =>
-          r.lastSuccessAt ? Date.now() - new Date(r.lastSuccessAt).getTime() : Infinity,
-        ),
-      )
-    : Infinity;
-  const freshnessLevel =
-    worstAge <= 45 * 60_000 ? "fresh" : worstAge < 3 * 60 * 60_000 ? "stale" : "old";
+  const freshnessLevel = freshnessState(freshness);
   const currencies = [
     ...new Set(
       [
@@ -592,25 +584,27 @@ function App() {
               incl. {config.display?.tax?.label || "tax"}
             </label>
           )}
-          <span
-            class={`fresh ${freshnessLevel}`}
-            title={
-              freshnessLevel === "fresh"
-                ? "All providers synced within 45 minutes"
-                : freshnessLevel === "stale"
-                  ? "Provider data is delayed"
-                  : "Provider data is stale or unavailable"
-            }
-          >
-            <i />{" "}
-            <span>
-              {freshnessLevel === "fresh"
-                ? "Data current"
-                : freshnessLevel === "stale"
-                  ? "Data delayed"
-                  : "Data stale"}
+          {freshnessLevel !== "none" && (
+            <span
+              class={`fresh ${freshnessLevel}`}
+              title={
+                freshnessLevel === "fresh"
+                  ? "All providers are up to date"
+                  : freshnessLevel === "stale"
+                    ? "Provider data is delayed"
+                    : "Provider data is stale or unavailable"
+              }
+            >
+              <i />{" "}
+              <span>
+                {freshnessLevel === "fresh"
+                  ? "Data current"
+                  : freshnessLevel === "stale"
+                    ? "Data delayed"
+                    : "Data stale"}
+              </span>
             </span>
-          </span>
+          )}
           {me?.authMode === "token" && (
             <button
               type="button"

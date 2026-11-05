@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { valueAxis } from "../../src/web/chart";
-import { jobStatus, tagLabels } from "../../src/web/format";
+import { freshnessState, jobStatus, tagLabels } from "../../src/web/format";
 
 it.each([{}, null, undefined, []])("renders empty or missing tags without raw JSON: %j", (tags) => {
   expect(tagLabels(tags)).toEqual([]);
@@ -39,4 +39,13 @@ it.each([
     { provider: "openrouter", status: "disabled" },
   ];
   expect(jobStatus(job, providers)).toBe(expected);
+});
+it.each([
+  [[], "none"],
+  [[{ lastSuccessAt: "2026-11-04T03:00:00Z", stale: false }], "fresh"],
+  [[{ lastSuccessAt: "2026-11-04T02:00:00Z", stale: true }], "stale"],
+  [[{ lastSuccessAt: null, stale: true }], "old"],
+  [[{ lastSuccessAt: "2026-11-03T23:00:00Z", stale: true }], "old"],
+])("header freshness for %j is %s", (freshness, expected) => {
+  expect(freshnessState(freshness, Date.parse("2026-11-04T03:15:00Z"))).toBe(expected);
 });

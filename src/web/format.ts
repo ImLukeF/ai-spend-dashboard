@@ -17,3 +17,15 @@ export function jobStatus(
   if (provider && provider.status !== "configured") return "Paused";
   return "OK";
 }
+
+// Header badge state. "none" hides it when no provider can sync; otherwise trust the API's stale flags.
+export function freshnessState(
+  freshness: { lastSuccessAt?: unknown; stale?: unknown }[],
+  now = Date.now(),
+): "none" | "fresh" | "stale" | "old" {
+  if (!freshness.length) return "none";
+  const old = (r: { lastSuccessAt?: unknown }) =>
+    !r.lastSuccessAt || now - new Date(String(r.lastSuccessAt)).getTime() > 3 * 3600000;
+  if (freshness.some(old)) return "old";
+  return freshness.some((r) => r.stale) ? "stale" : "fresh";
+}
