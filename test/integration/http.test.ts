@@ -6,8 +6,9 @@ import {
   UsageResponseSchema,
 } from "../../src/shared/api-types";
 import { createApp } from "../../src/worker/http/app";
-import { csvCell } from "../../src/worker/http/read";
 import { createSession } from "../../src/worker/http/auth";
+import { csvCell } from "../../src/worker/http/read";
+import { hash } from "../../src/worker/lib/hash";
 import { deps, NOW, resetDb } from "../helpers";
 
 const token = "test-dashboard-token-0123456789abcdef0123";
@@ -365,4 +366,25 @@ it("reports freshness only for providers with keys and shows their sync errors",
     { provider: "openrouter", lastSuccessAt: ago(50), lastError: null, stale: false },
   ]);
   expect(warnings.join(" ")).not.toContain("anthropic");
+});
+
+it("keys the failed-login client hash so addresses can't be brute-forced", async () => {
+  const c = deps(config, { DASHBOARD_TOKEN: token });
+  await createApp(c).request("https://example.com/api/v1/session", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-asd-csrf": "1",
+      "cf-connecting-ip": "192.0.2.1",
+    },
+    body: JSON.stringify({ token: "wrong" }),
+  });
+  const detail = await c.env.DB.prepare(
+    "SELECT detail FROM audit_log WHERE action='login_failed'",
+  ).first<string>("detail");
+  const { clientHash } = JSON.parse(detail ?? "{}") as { clientHash: string };
+  expect(clientHash).toHaveLength(16);
+  expect(clientHash).not.toBe(
+    (await hash(`192.0.2.1${NOW.toISOString().slice(0, 10)}`)).slice(0, 16),
+  );
 });

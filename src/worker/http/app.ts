@@ -71,9 +71,10 @@ export function createApp(deps: Deps) {
     if (!result.success) return c.json(error("invalid_input", "Expected token"), 400);
     if (!(await constantEqual(result.data.token, secret(deps.env, "DASHBOARD_TOKEN")))) {
       await audit(deps.env.DB, iso(deps.now()), "token", "login_failed", {
+        // Keyed with the token so a database copy can't brute-force addresses back.
         clientHash: (
           await hash(
-            `${c.req.header("cf-connecting-ip") ?? "unknown"}${iso(deps.now()).slice(0, 10)}`,
+            `${secret(deps.env, "DASHBOARD_TOKEN")}|${c.req.header("cf-connecting-ip") ?? "unknown"}|${iso(deps.now()).slice(0, 10)}`,
           )
         ).slice(0, 16),
       });
