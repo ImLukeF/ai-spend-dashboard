@@ -97,6 +97,15 @@ it("returns readable config errors", async () => {
   expect(c.ok).toBe(false);
   if (!c.ok) expect(c.errors[0]).toContain("display.currency");
 });
+it("explains a pasted secret value without echoing it", async () => {
+  const pasted = "https://hooks.example.com/services/example";
+  const c = await loadConfig({ channels: [{ id: "x", type: "slack", webhookUrlSecret: pasted }] });
+  expect(c.ok).toBe(false);
+  if (!c.ok) {
+    expect(c.errors.join()).toContain("Use the secret NAME");
+    expect(c.errors.join()).not.toContain(pasted);
+  }
+});
 it("canonical hash input ignores object insertion order", () =>
   expect(canonical({ b: 1, a: { d: 2, c: 3 } })).toBe(canonical({ a: { c: 3, d: 2 }, b: 1 })));
 it("redacts every credential family, bearer, channel URL and email", () => {

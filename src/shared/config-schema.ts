@@ -1,8 +1,12 @@
 import { z } from "zod";
 export const ProviderSchema = z.enum(["anthropic", "openai", "openrouter"]);
 export type ProviderId = z.infer<typeof ProviderSchema>;
-const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}$/);
-const secret = z.string().regex(/^[A-Z][A-Z0-9_]{1,63}$/);
+const id = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]{0,47}$/, "Use lowercase letters, digits and hyphens (max 48)");
+const secret = z
+  .string()
+  .regex(/^[A-Z][A-Z0-9_]{1,63}$/, "Use the secret NAME, e.g. SLACK_WEBHOOK_URL, not its value");
 const currency = z.string().regex(/^[A-Z]{3}$/);
 const ids = z.array(z.string().min(1)).default([]);
 const target = z.discriminatedUnion("type", [
