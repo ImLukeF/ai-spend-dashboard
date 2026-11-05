@@ -7,7 +7,7 @@ export default defineConfig({
     openai: { enabled: true },
     openrouter: { enabled: false },
   },
-  display: { currency: "USD" },
+  display: { currency: "USD", extraCurrencies: ["EUR", "GBP", "AUD", "CAD", "JPY", "INR"] },
   channels: [],
   budgets: [],
 });
