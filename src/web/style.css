@@ -4,7 +4,7 @@
   background: #f8faf9;
   font-synthesis: none;
   --ink: #1d292e;
-  --muted: #687a7c;
+  --muted: #5b6c6e;
   --line: #dce5e2;
   --surface: #fff;
   --accent: #087761;
@@ -576,8 +576,14 @@ footer {
   .header-tools {
     margin-left: auto;
   }
+  /* Hidden visually but still read out, so freshness isn't shown by colour alone. */
   .fresh span {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 }
 @media (max-width: 700px) {
